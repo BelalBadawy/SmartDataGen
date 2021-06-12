@@ -2876,11 +2876,11 @@ namespace " + DataAccessNameSpace + @".Identity
 
                 streamWriter.WriteLine(@"
 
-using "+ApplicationNameSpace+ @".Interfaces;
+using " + ApplicationNameSpace + @".Interfaces;
 using " + ApplicationNameSpace + @".Interfaces.Repositories;
-using "+DomainNameSpace+ @".Common;
+using " + DomainNameSpace + @".Common;
 using " + DomainNameSpace + @".Entities;
-using " + DataAccessNameSpace+ @".Common;
+using " + DataAccessNameSpace + @".Common;
 using " + DataAccessNameSpace + @".Data;
 using " + DataAccessNameSpace + @".Data.Repositories;
 using " + DataAccessNameSpace + @".Identity;
@@ -2926,19 +2926,26 @@ namespace " + DataAccessNameSpace + @"
 
 
 
-                services.AddIdentity<ApplicationUser, IdentityRole<Guid>>()
+                services.AddIdentity<ApplicationUser, IdentityRole<" + UtilityHelper.GetIDKeyType(_appSetting) + @">>()
                     .AddEntityFrameworkStores<ApplicationDbContext>()
                     .AddDefaultTokenProviders();
 
+");
 
+                foreach (Table table in tableList)
+                {
+                    streamWriter.WriteLine("services.AddScoped<I" + UtilityHelper.MakeSingular(table.Name) + "RepositoryAsync, " + UtilityHelper.MakeSingular(table.Name) + "RepositoryAsync>();");
+                }
+
+                streamWriter.WriteLine(@"
                 services.AddTransient<UserManager<ApplicationUser>>();
                 services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-                services.AddScoped<IBookCategoryRepositoryAsync, BookCategoryRepositoryAsync>();
-
                 services.AddTransient<IAuthService, AuthService>();
                 services.AddTransient<IDateTimeService, DateTimeService>();
-
+                services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+                services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+                services.AddScoped<IPermissionChecker, PermissionChecker>();
+                services.AddScoped<IDbInitializer, DbInitializer>();
 
 
                 services.Configure<IdentityOptions>(opt =>
@@ -2957,10 +2964,7 @@ namespace " + DataAccessNameSpace + @"
                 });
 
 
-                services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
-                services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
-                services.AddScoped<IPermissionChecker, PermissionChecker>();
-
+              
 
                 services.AddAuthentication(options =>
                 {
@@ -3018,7 +3022,7 @@ namespace " + DataAccessNameSpace + @"
                        };
                    });
 
-                   services.AddScoped<IDbInitializer, DbInitializer>();
+                
 
 
 
