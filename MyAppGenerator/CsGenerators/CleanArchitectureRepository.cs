@@ -21,16 +21,21 @@ namespace MyAppGenerator.CsGenerators
         public static string OutputDirectory { get; set; }
         public static string ProjectName { get; set; }
         public static string DataPath { get; set; }
+
         #region Infrastructure Folders
+        public static string InfraCommonFolderPath { get; set; }
         public static string InfraDataInitializerPath { get; set; }
         public static string InfraDataFolderPath { get; set; }
+
         public static string InfraEntityConfigurationPath { get; set; }
         public static string InfraExtensionsPath { get; set; }
         public static string InfraInterfacesPath { get; set; }
+        public static string InfraIdentityPath { get; set; }
+        public static string InfraIdentityServicesPath { get; set; }
         public static string InfraInterfacesDataPath { get; set; }
         public static string InfraInterfacesRepositoriesPath { get; set; }
         public static string InfraRepositoriesPath { get; set; }
-        public static string InfraRepositoriesDataPath { get; set; }
+        // public static string InfraRepositoriesDataPath { get; set; }
         #endregion
 
         #region Domain Folders
@@ -133,34 +138,36 @@ namespace MyAppGenerator.CsGenerators
             DataPath = Path.Combine(outputDirectory, "Infrastructure");
             UtilityHelper.CreateSubDirectory(DataPath, true);
 
+
+            InfraCommonFolderPath = Path.Combine(outputDirectory, "Infrastructure/Common");
+            UtilityHelper.CreateSubDirectory(InfraCommonFolderPath, true);
+
             InfraDataFolderPath = Path.Combine(outputDirectory, "Infrastructure/Data");
             UtilityHelper.CreateSubDirectory(InfraDataFolderPath, true);
 
             InfraDataInitializerPath = Path.Combine(outputDirectory, "Infrastructure/Data/Initializer");
             UtilityHelper.CreateSubDirectory(InfraDataInitializerPath, true);
 
-            InfraEntityConfigurationPath = Path.Combine(outputDirectory, "Infrastructure/EntityConfiguration");
+            InfraEntityConfigurationPath = Path.Combine(outputDirectory, "Infrastructure/Data/EntityConfiguration");
             UtilityHelper.CreateSubDirectory(InfraEntityConfigurationPath, true);
+
+            InfraRepositoriesPath = Path.Combine(outputDirectory, "Infrastructure/Data/Repositories");
+            UtilityHelper.CreateSubDirectory(InfraRepositoriesPath, true); //partial
 
 
             InfraExtensionsPath = Path.Combine(outputDirectory, "Infrastructure/Extensions");
             UtilityHelper.CreateSubDirectory(InfraExtensionsPath, true);
 
-            InfraInterfacesPath = Path.Combine(outputDirectory, "Infrastructure/Interfaces");
-            UtilityHelper.CreateSubDirectory(InfraInterfacesPath, true);
 
-            InfraInterfacesDataPath = Path.Combine(outputDirectory, "Infrastructure/Interfaces/Data");
-            UtilityHelper.CreateSubDirectory(InfraInterfacesDataPath, true);
-
-            InfraInterfacesRepositoriesPath = Path.Combine(outputDirectory, "Infrastructure/Interfaces/Repositories");
-            UtilityHelper.CreateSubDirectory(InfraInterfacesRepositoriesPath, true);
+            InfraIdentityPath = Path.Combine(outputDirectory, "Infrastructure/Identity");
+            UtilityHelper.CreateSubDirectory(InfraIdentityPath, true);
 
 
-            InfraRepositoriesPath = Path.Combine(outputDirectory, "Infrastructure/Repositories");
-            UtilityHelper.CreateSubDirectory(InfraRepositoriesPath, true); //partial
+            InfraIdentityServicesPath = Path.Combine(outputDirectory, "Infrastructure/Identity/Services");
+            UtilityHelper.CreateSubDirectory(InfraIdentityServicesPath, true);
 
-            InfraRepositoriesDataPath = Path.Combine(outputDirectory, "Infrastructure/Repositories/Data");
-            UtilityHelper.CreateSubDirectory(InfraRepositoriesDataPath, true); //partial
+
+
             #endregion
 
             #region Domain Folders
@@ -1228,120 +1235,24 @@ namespace " + DomainNameSpace + @".Enums
         }
         private static void CreateInfrastructureClasses()
         {
+            #region Common Classes
 
-            #region Extensions Classes
-
-            #region  EnumerablePagedListExtensions
+            #region  DateTimeService
 
             using (
                 StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraExtensionsPath, "EnumerablePagedListExtensions.cs")))
+                    new StreamWriter(Path.Combine(InfraCommonFolderPath, "DateTimeService.cs")))
             {
                 // Create the header for the class
                 streamWriter.WriteLine(@"
-using " + DataAccessNameSpace + @".Interfaces.Data;
-using " + DataAccessNameSpace + @".Repositories;
+using " + ApplicationNameSpace + @".Interfaces;
 using System;
-using System.Collections.Generic;
 
-namespace " + DataAccessNameSpace + @".Extensions
+namespace " + DataAccessNameSpace + @".Common
 {
-    /// <summary>
-    /// Provides some extension methods for <see cref='IEnumerable{T}'/> to provide paging capability.
-    /// </summary>
-    public static class EnumerablePagedListExtensions
+    public class DateTimeService : IDateTimeService
     {
-        /// <summary>
-        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='pageIndex'/> and <paramref name='pageSize'/>.
-        /// </summary>
-        /// <typeparam name='T'>The type of the source.</typeparam>
-        /// <param name='source'>The source to paging.</param>
-        /// <param name='pageIndex'>The index of the page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='indexFrom'>The start index value.</param>
-        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
-        public static IPagedList<T> ToPagedList<T>(this IEnumerable<T> source, int pageIndex, int pageSize, int indexFrom = 0) => new PagedList<T>(source, pageIndex, pageSize, indexFrom);
-
-        /// <summary>
-        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='converter'/>, <paramref name='pageIndex'/> and <paramref name='pageSize'/>
-        /// </summary>
-        /// <typeparam name='TSource'>The type of the source.</typeparam>
-        /// <typeparam name='TResult'>The type of the result</typeparam>
-        /// <param name='source'>The source to convert.</param>
-        /// <param name='converter'>The converter to change the <typeparamref name='TSource'/> to <typeparamref name='TResult'/>.</param>
-        /// <param name='pageIndex'>The page index.</param>
-        /// <param name='pageSize'>The page size.</param>
-        /// <param name='indexFrom'>The start index value.</param>
-        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
-        public static IPagedList<TResult> ToPagedList<TSource, TResult>(this IEnumerable<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter, int pageIndex, int pageSize, int indexFrom = 0) => new PagedList<TSource, TResult>(source, converter, pageIndex, pageSize, indexFrom);
-    }
-}
-
-");
-
-            }
-
-            #endregion
-
-            #region QueryablePageListExtensions
-
-
-
-
-
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraExtensionsPath, "QueryablePageListExtensions.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using " + DataAccessNameSpace + @".Interfaces.Data;
-using " + DataAccessNameSpace + @".Repositories;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace " + DataAccessNameSpace + @".Extensions
-{
-    public static class QueryablePageListExtensions
-    {
-        /// <summary>
-        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='pageIndex'/> and <paramref name='pageSize'/>.
-        /// </summary>
-        /// <typeparam name='T'>The type of the source.</typeparam>
-        /// <param name='source'>The source to paging.</param>
-        /// <param name='pageIndex'>The index of the page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='cancellationToken'>
-        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
-        /// </param>
-        /// <param name='indexFrom'>The start index value.</param>
-        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
-        public static async Task<IPagedList<T>> ToPagedListAsync<T>(this IQueryable<T> source, int pageIndex, int pageSize, int indexFrom = 0, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            if (indexFrom > pageIndex)
-            {
-                throw new ArgumentException($""indexFrom: { indexFrom} > pageIndex: { pageIndex}, must indexFrom <= pageIndex"");
-            }
-
-            var count = await source.CountAsync(cancellationToken).ConfigureAwait(false);
-            var items = await source.Skip((pageIndex - indexFrom) * pageSize)
-                .Take(pageSize).ToListAsync(cancellationToken).ConfigureAwait(false);
-
-            var pagedList = new PagedList<T>()
-            {
-                PageIndex = pageIndex,
-                PageSize = pageSize,
-                IndexFrom = indexFrom,
-                TotalCount = count,
-                Items = items,
-                TotalPages = (int)Math.Ceiling(count / (double)pageSize)
-            };
-
-            return pagedList;
-        }
+        public DateTime NowUtc => DateTime.UtcNow;
     }
 }
 
@@ -1353,1740 +1264,9 @@ namespace " + DataAccessNameSpace + @".Extensions
 
             #endregion
 
-            #region Interfaces
-
-
-            #region Data
-
-            //IDbInitializer
-            #region IDbInitializer
-            using (
-               StreamWriter streamWriter =
-                   new StreamWriter(Path.Combine(InfraInterfacesDataPath, "IDbInitializer.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-namespace " + DataAccessNameSpace + @".Interfaces.Data {
-    public interface IDbInitializer
-    {
-        void Initialize();
-    }
-}
-
-");
-
-            }
-
-            #endregion
-
-
-            //IPagedList
-            #region IPagedList
-
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraInterfacesDataPath, "IPagedList.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using System.Collections.Generic;
-namespace " + DataAccessNameSpace + @".Interfaces.Data
-{
-    /// <summary>
-    /// Provides the interface(s) for paged list of any type.
-    /// </summary>
-    /// <typeparam name='T'>The type for paging.</typeparam>
-        public interface IPagedList<T>
-        {
-            /// <summary>
-            /// Gets the index start value.
-            /// </summary>
-            /// <value>The index start value.</value>
-            int IndexFrom { get; }
-            /// <summary>
-            /// Gets the page index (current).
-            /// </summary>
-            int PageIndex { get; }
-            /// <summary>
-            /// Gets the page size.
-            /// </summary>
-            int PageSize { get; }
-            /// <summary>
-            /// Gets the total count of the list of type <typeparamref name='T'/>
-            /// </summary>
-            int TotalCount { get; }
-            /// <summary>
-            /// Gets the total pages.
-            /// </summary>
-            int TotalPages { get; }
-            /// <summary>
-            /// Gets the current page items.
-            /// </summary>
-            IList<T> Items { get; }
-            /// <summary>
-            /// Gets the has previous page.
-            /// </summary>
-            /// <value>The has previous page.</value>
-            bool HasPreviousPage { get; }
-            /// <summary>
-            /// Gets the has next page.
-            /// </summary>
-            /// <value>The has next page.</value>
-            bool HasNextPage { get; }
-
-
-
-
-            }
-        }
-
-");
-
-            }
-
-            #endregion
-
-
-            //IRepository
-            #region IRepository
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraInterfacesDataPath, "IRepository.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using Microsoft.EntityFrameworkCore.Query;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Threading;
-using System.Threading.Tasks;
-namespace " + DataAccessNameSpace + @".Interfaces.Data
-{
-    public interface IRepository<TEntity> where TEntity : class
-    {
-        #region VARIOUS
-        /// <summary>
-        /// Gets all entities. This method is not recommended
-        /// </summary>
-        /// <returns>The <see cref='IQueryable{TEntity}'/>.</returns>
-        IQueryable<TEntity> GetAll();
-
-        /// <summary>
-        /// Gets the count based on a predicate.
-        /// </summary>
-        /// <param name='predicate'></param>
-        /// <returns></returns>
-        int Count(Expression<Func<TEntity, bool>> predicate = null);
-        #endregion
-
-        #region PAGEDLIST
-        /// <summary>
-        /// Gets the <see cref='IPagedList{TEntity}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='pageIndex'>The index of page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        IPagedList<TEntity> GetPagedList(Expression<Func<TEntity, bool>> predicate = null,
-                                         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                         Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                         int pageIndex = 0,
-                                         int pageSize = 10,
-                                         bool disableTracking = true);
-
-        /// <summary>
-        /// Gets the <see cref='IPagedList{TEntity}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='pageIndex'>The index of page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <param name='cancellationToken'>
-        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
-        /// </param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        Task<IPagedList<TEntity>> GetPagedListAsync(Expression<Func<TEntity, bool>> predicate = null,
-                                                    Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                    Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                    int pageIndex = 0,
-                                                    int pageSize = 20,
-                                                    bool disableTracking = true,
-                                                    CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Gets the <see cref='IPagedList{TResult}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='selector'>The selector for projection.</param>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='pageIndex'>The index of page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{TResult}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        IPagedList<TResult> GetPagedList<TResult>(Expression<Func<TEntity, TResult>> selector,
-                                                  Expression<Func<TEntity, bool>> predicate = null,
-                                                  Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                  Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                  int pageIndex = 0,
-                                                  int pageSize = 20,
-                                                  bool disableTracking = true) where TResult : class;
-
-        /// <summary>
-        /// Gets the <see cref='IPagedList{TEntity}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='selector'>The selector for projection.</param>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='pageIndex'>The index of page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <param name='cancellationToken'>
-        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
-        /// </param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        Task<IPagedList<TResult>> GetPagedListAsync<TResult>(Expression<Func<TEntity, TResult>> selector,
-                                                             Expression<Func<TEntity, bool>> predicate = null,
-                                                             Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                             Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                             int pageIndex = 0,
-                                                             int pageSize = 20,
-                                                             bool disableTracking = true,
-                                                             CancellationToken cancellationToken = default(CancellationToken)) where TResult : class;
-        #endregion
-
-        #region List
-        IList<TEntity> GetList(Expression<Func<TEntity, bool>> predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-            bool disableTracking = true);
-
-        Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-            bool disableTracking = true,
-            CancellationToken cancellationToken = default(CancellationToken));
-
-        IList<TResult> GetList<TResult>(Expression<Func<TEntity, TResult>> selector,
-            Expression<Func<TEntity, bool>> predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-            bool disableTracking = true) where TResult : class;
-
-        Task<List<TResult>> GetListAsync<TResult>(Expression<Func<TEntity, TResult>> selector,
-            Expression<Func<TEntity, bool>> predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-            bool disableTracking = true,
-            CancellationToken cancellationToken = default(CancellationToken)) where TResult : class;
-        #endregion
-
-        #region FIRSTORDEFAULT 
-        /// <summary>
-        /// Gets the first or default entity based on a predicate, orderby delegate and include delegate. This method defaults to a read-only, no-tracking query.
-        /// </summary>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>true</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{T}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method defaults to a read-only, no-tracking query.</remarks>
-        TEntity GetFirstOrDefault(Expression<Func<TEntity, bool>> predicate = null,
-                                  Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                  Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                  bool disableTracking = true);
-
-        /// <summary>
-        /// Gets the first or default entity based on a predicate, orderby delegate and include delegate. This method defaults to a read-only, no-tracking query.
-        /// </summary>
-        /// <param name='selector'>The selector for projection.</param>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>true</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method defaults to a read-only, no-tracking query.</remarks>
-        TResult GetFirstOrDefault<TResult>(Expression<Func<TEntity, TResult>> selector,
-                                           Expression<Func<TEntity, bool>> predicate = null,
-                                           Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                           bool disableTracking = true);
-
-        /// <summary>
-        /// Gets the first or default entity based on a predicate, orderby delegate and include delegate. This method defaults to a read-only, no-tracking query.
-        /// </summary>
-        /// <param name='selector'>The selector for projection.</param>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>true</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>Ex: This method defaults to a read-only, no-tracking query.</remarks>
-        Task<TResult> GetFirstOrDefaultAsync<TResult>(Expression<Func<TEntity, TResult>> selector,
-            Expression<Func<TEntity, bool>> predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-            bool disableTracking = true);
-
-        /// <summary>
-        /// Gets the first or default entity based on a predicate, orderby delegate and include delegate. This method defaults to a read-only, no-tracking query.
-        /// </summary>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>true</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>Ex: This method defaults to a read-only, no-tracking query. </remarks>
-        Task<TEntity> GetFirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-            bool disableTracking = true);
-        #endregion
-
-        #region FIND 
-        /// <summary>
-        /// Finds an entity with the given primary key values. If found, is attached to the context and returned. If no entity is found, then null is returned.
-        /// </summary>
-        /// <param name='keyValues'>The values of the primary key for the entity to be found.</param>
-        /// <returns>The found entity or null.</returns>
-        TEntity Find(params object[] keyValues);
-
-        /// <summary>
-        /// Finds an entity with the given primary key values. If found, is attached to the context and returned. If no entity is found, then null is returned.
-        /// </summary>
-        /// <param name='keyValues'>The values of the primary key for the entity to be found.</param>
-        /// <returns>A <see cref='Task{TEntity}'/> that represents the asynchronous find operation. The task result contains the found entity or null.</returns>
-        Task<TEntity> FindAsync(params object[] keyValues);
-
-        /// <summary>
-        /// Finds an entity with the given primary key values. If found, is attached to the context and returned. If no entity is found, then null is returned.
-        /// </summary>
-        /// <param name='keyValues'>The values of the primary key for the entity to be found.</param>
-        /// <param name='cancellationToken'>A <see cref='CancellationToken'/> to observe while waiting for the task to complete.</param>
-        /// <returns>A <see cref='Task{TEntity}'/> that represents the asynchronous find operation. The task result contains the found entity or null.</returns>
-        Task<TEntity> FindAsync(object[] keyValues, CancellationToken cancellationToken);
-
-
-        bool Any(Expression<Func<TEntity, bool>> predicate = null);
-
-
-        /// <summary>
-        /// bool based on a predicate.
-        /// </summary>
-        /// <param name='predicate'></param>
-        /// <param name='cancellationToken'>A <see cref='CancellationToken'/> to observe while waiting for the task to complete.</param>
-        /// <returns>true or false</returns>
-        Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate = null,
-            CancellationToken cancellationToken = default(CancellationToken));
-
-
-        #endregion
-
-        #region INSERT
-        /// <summary>
-        /// Inserts a new entity synchronously.
-        /// </summary>
-        /// <param name='entity'>The entity to insert.</param>
-        void Insert(TEntity entity);
-
-        /// <summary>
-        /// Inserts a range of entities synchronously.
-        /// </summary>
-        /// <param name='entities'>The entities to insert.</param>
-        void Insert(params TEntity[] entities);
-
-        /// <summary>
-        /// Inserts a range of entities synchronously.
-        /// </summary>
-        /// <param name='entities'>The entities to insert.</param>
-        void Insert(IEnumerable<TEntity> entities);
-
-        /// <summary>
-        /// Inserts a new entity asynchronously.
-        /// </summary>
-        /// <param name='entity'>The entity to insert.</param>
-        /// <param name='cancellationToken'>A <see cref='CancellationToken'/> to observe while waiting for the task to complete.</param>
-        /// <returns>A <see cref='Task'/> that represents the asynchronous insert operation.</returns>
-        Task InsertAsync(TEntity entity, CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
-        /// Inserts a range of entities asynchronously.
-        /// </summary>
-        /// <param name='entities'>The entities to insert.</param>
-        /// <returns>A <see cref='Task'/> that represents the asynchronous insert operation.</returns>
-        Task InsertAsync(params TEntity[] entities);
-
-        /// <summary>
-        /// Inserts a range of entities asynchronously.
-        /// </summary>
-        /// <param name='entities'>The entities to insert.</param>
-        /// <param name='cancellationToken'>A <see cref='CancellationToken'/> to observe while waiting for the task to complete.</param>
-        /// <returns>A <see cref='Task'/> that represents the asynchronous insert operation.</returns>
-        Task InsertAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default(CancellationToken));
-        #endregion
-
-        #region UPDATE
-        /// <summary>
-        /// Updates the specified entity.
-        /// </summary>
-        /// <param name='entity'>The entity.</param>
-        void Update(TEntity entity);
-
-        /// <summary>
-        /// Updates the specified entities.
-        /// </summary>
-        /// <param name='entities'>The entities.</param>
-        void Update(params TEntity[] entities);
-
-        /// <summary>
-        /// Updates the specified entities.
-        /// </summary>
-        /// <param name='entities'>The entities.</param>
-        void Update(IEnumerable<TEntity> entities);
-        #endregion
-
-        #region DELETE
-        /// <summary>
-        /// Deletes the entity by the specified primary key.
-        /// </summary>
-        /// <param name='id'>The primary key value.</param>
-        void Delete(object id);
-
-        /// <summary>
-        /// Deletes the specified entity.
-        /// </summary>
-        /// <param name='entity'>The entity to delete.</param>
-        void Delete(TEntity entity);
-
-        /// <summary>
-        /// Deletes the specified entities.
-        /// </summary>
-        /// <param name='entities'>The entities.</param>
-        void Delete(params TEntity[] entities);
-
-        /// <summary>
-        /// Deletes the specified entities.
-        /// </summary>
-        /// <param name='entities'>The entities.</param>
-        void Delete(IEnumerable<TEntity> entities);
-        #endregion
-    }
-}
-
-");
-
-            }
-
-            #endregion
-
-
-            //IRepositoryFactory
-            #region IRepositoryFactory
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraInterfacesDataPath, "IRepositoryFactory.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-
-namespace " + DataAccessNameSpace + @".Interfaces.Data
-{
-    /// <summary>
-    /// Defines the interfaces for <see cref='IRepository{TEntity}'/> interfaces.
-    /// </summary>
-    public interface IRepositoryFactory
-    {
-        /// <summary>
-        /// Gets the specified repository for the <typeparamref name='TEntity'/>.
-        /// </summary>
-        /// <typeparam name='TEntity'>The type of the entity.</typeparam>
-        /// <returns>An instance of type inherited from <see cref='IRepository{TEntity}'/> interface.</returns>
-       // IRepository<TEntity> GetGenericRepository<TEntity>() where TEntity : class;
-
-
-       //   TEntity GetRepository<TEntity>() where TEntity : class;
-
-    }
-}
-
-");
-
-            }
-
-            #endregion
-
-
-
-            //IUnitOfWork
-            #region IUnitOfWork
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraInterfacesDataPath, "IUnitOfWork.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-namespace " + DataAccessNameSpace + @".Interfaces.Data
-{
-   /// <summary>
-    /// Defines the interface(s) for unit of work.
-    /// </summary>
-    public interface IUnitOfWork : IDisposable
-    {
-
-
-        #region Supported Repositories
-       
-
-
-        #endregion
-        /// <summary>
-        /// Gets the specified repository for the <typeparamref name='TEntity'/>.
-        /// </summary>
-        /// <typeparam name='TEntity'>The type of the entity.</typeparam>
-        /// <returns>An instance of type inherited from <see cref='IRepository{TEntity}'/> interface.</returns>
-     //   IRepository<TEntity> GetGenericRepository<TEntity>() where TEntity : class;
-        TEntity GetRepository<TEntity>() where TEntity : class;
-
-
-
-
-        /// <summary>
-        /// Saves all changes made in this context to the database.
-        /// </summary>
-        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
-        /// <returns>The number of state entries written to the database.</returns>
-        int SaveChanges();
-
-        /// <summary>
-        /// Asynchronously saves all changes made in this unit of work to the database.
-        /// </summary>
-        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
-        /// <returns>A <see cref='Task{TResult}'/> that represents the asynchronous save operation. The task result contains the number of state entities written to database.</returns>
-        Task<int> SaveChangesAsync();
-
-        /// <summary>
-        /// Executes the specified raw SQL command.
-        /// </summary>
-        /// <param name='sql'>The raw SQL.</param>
-        /// <param name='parameters'>The parameters.</param>
-        /// <returns>The number of state entities written to database.</returns>
-        int ExecuteSqlCommand(string sql, params object[] parameters);
-
-        /// <summary>
-        /// Uses raw SQL queries to fetch the specified <typeparamref name='TEntity'/> data.
-        /// </summary>
-        /// <typeparam name='TEntity'>The type of the entity.</typeparam>
-        /// <param name='sql'>The raw SQL.</param>
-        /// <param name='parameters'>The parameters.</param>
-        /// <returns>An <see cref='IQueryable{T}'/> that contains elements that satisfy the condition specified by raw SQL.</returns>
-        IQueryable<TEntity> FromSqlRaw<TEntity>(string sql, params object[] parameters) where TEntity : class;
-    }
-}
-
-");
-
-            }
-
-            #endregion
-
-
-            #endregion
-
-            #region Repositories
-
-            foreach (var table in tables)
-            {
-
-                string className = "";
-
-                #region  Model Classes
-                className = "I" + table.Title;
-
-                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraInterfacesRepositoriesPath, className + "Repository.cs")))
-                {
-                    // Create the header for the class
-                    streamWriter.WriteLine("using " + DomainNameSpace + ".Entities;");
-                    streamWriter.WriteLine("using " + DataAccessNameSpace + ".Interfaces.Data;");
-                    streamWriter.WriteLine(@"namespace " + DataAccessNameSpace + @".Interfaces.Repositories
-{
-    public interface " + className + "Repository : IRepository<" + table.Title + @">
-    {
-        //Task<List<KeyValue>> GetAllForDropDownLis();
-    }
-}"
-                                           );
-
-
-
-
-
-
-
-
-
-                }
-                #endregion
-
-
-            }
-
-            #endregion
-
-            #endregion
-
-            #region Implementations
-
-            #region Repositories
-
-            foreach (var table in tables)
-            {
-
-                string className = "";
-
-                #region  Model Classes
-                className = table.Title;
-
-                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraRepositoriesPath, className + "Repository.cs")))
-                {
-                    // Create the header for the class
-                    streamWriter.WriteLine("using " + DomainNameSpace + ".Entities;");
-                    streamWriter.WriteLine("using " + DataAccessNameSpace + ".Interfaces.Repositories;");
-                    streamWriter.WriteLine(@"using Microsoft.EntityFrameworkCore;
-namespace " + DataAccessNameSpace + @".Repositories
-{
-   public class " + table.Title + @"Repository : Repository<" + table.Title + @">, I" + table.Title + @"Repository
-    {
-
-
-        public " + table.Title + @"Repository(DbContext dbContext) : base(dbContext)
-        {
-
-        }
-
-        //public async Task<List<KeyValue>> GetAllForDropDownLis()
-        //{
-        //    return await _dbSet.AsNoTracking().Select(o => new KeyValue() { Id = o.BookTypeId, Value = o.Title }).ToListAsync();
-        //}
-    }
-}"
-                    );
-
-
-
-
-
-
-
-
-
-                }
-                #endregion
-
-
-            }
-
-            #endregion
-
-            #region PagedList
-
-
-            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraRepositoriesDataPath, "PagedList.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"using " + DataAccessNameSpace + @".Interfaces.Data;
-                using System;
-                using System.Collections.Generic;
-                using System.Linq;
-
-namespace  " + DataAccessNameSpace + @".Repositories
-    {
-        /// <summary>
-        /// Represents the default implementation of the <see cref='IPagedList{T}'/> interface.
-        /// </summary>
-        /// <typeparam name='T'>The type of the data to page</typeparam>
-        public class PagedList<T> : IPagedList<T>
-        {
-            /// <summary>
-            /// Gets or sets the index of the page.
-            /// </summary>
-            /// <value>The index of the page.</value>
-            public int PageIndex { get; set; }
-            /// <summary>
-            /// Gets or sets the size of the page.
-            /// </summary>
-            /// <value>The size of the page.</value>
-            public int PageSize { get; set; }
-            /// <summary>
-            /// Gets or sets the total count.
-            /// </summary>
-            /// <value>The total count.</value>
-            public int TotalCount { get; set; }
-            /// <summary>
-            /// Gets or sets the total pages.
-            /// </summary>
-            /// <value>The total pages.</value>
-            public int TotalPages { get; set; }
-            /// <summary>
-            /// Gets or sets the index from.
-            /// </summary>
-            /// <value>The index from.</value>
-            public int IndexFrom { get; set; }
-
-            /// <summary>
-            /// Gets or sets the items.
-            /// </summary>
-            /// <value>The items.</value>
-            public IList<T> Items { get; set; }
-
-            /// <summary>
-            /// Gets the has previous page.
-            /// </summary>
-            /// <value>The has previous page.</value>
-            public bool HasPreviousPage => PageIndex - IndexFrom > 0;
-
-            /// <summary>
-            /// Gets the has next page.
-            /// </summary>
-            /// <value>The has next page.</value>
-            public bool HasNextPage => PageIndex - IndexFrom + 1 < TotalPages;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref='PagedList{T}' /> class.
-            /// </summary>
-            /// <param name='source'>The source.</param>
-            /// <param name='pageIndex'>The index of the page.</param>
-            /// <param name='pageSize'>The size of the page.</param>
-            /// <param name='indexFrom'>The index from.</param>
-            internal PagedList(IEnumerable<T> source, int pageIndex, int pageSize, int indexFrom)
-            {
-                if (indexFrom > pageIndex)
-                    throw new ArgumentException($""indexFrom: {indexFrom} > pageIndex: {pageIndex}, must indexFrom <= pageIndex"");
-
-
-                if (source is IQueryable<T> querable)
-                {
-                    PageIndex = pageIndex;
-                    PageSize = pageSize;
-                    IndexFrom = indexFrom;
-                    TotalCount = querable.Count();
-                    TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
-
-                    Items = querable.Skip((PageIndex - IndexFrom) * PageSize).Take(PageSize).ToList();
-                }
-                else
-                {
-                    PageIndex = pageIndex;
-                    PageSize = pageSize;
-                    IndexFrom = indexFrom;
-                    TotalCount = source.Count();
-                    TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
-
-                    Items = source.Skip((PageIndex - IndexFrom) * PageSize).Take(PageSize).ToList();
-                }
-            }
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref='PagedList{T}' /> class.
-            /// </summary>
-            internal PagedList() => Items = new T[0];
-        }
-
-
-        /// <summary>
-        /// Provides the implementation of the <see cref='IPagedList{T}'/> and converter.
-        /// </summary>
-        /// <typeparam name='TSource'>The type of the source.</typeparam>
-        /// <typeparam name='TResult'>The type of the result.</typeparam>
-        internal class PagedList<TSource, TResult> : IPagedList<TResult>
-        {
-            /// <summary>
-            /// Gets the index of the page.
-            /// </summary>
-            /// <value>The index of the page.</value>
-            public int PageIndex { get; }
-            /// <summary>
-            /// Gets the size of the page.
-            /// </summary>
-            /// <value>The size of the page.</value>
-            public int PageSize { get; }
-            /// <summary>
-            /// Gets the total count.
-            /// </summary>
-            /// <value>The total count.</value>
-            public int TotalCount { get; }
-            /// <summary>
-            /// Gets the total pages.
-            /// </summary>
-            /// <value>The total pages.</value>
-            public int TotalPages { get; }
-            /// <summary>
-            /// Gets the index from.
-            /// </summary>
-            /// <value>The index from.</value>
-            public int IndexFrom { get; }
-
-            /// <summary>
-            /// Gets the items.
-            /// </summary>
-            /// <value>The items.</value>
-            public IList<TResult> Items { get; }
-
-            /// <summary>
-            /// Gets the has previous page.
-            /// </summary>
-            /// <value>The has previous page.</value>
-            public bool HasPreviousPage => PageIndex - IndexFrom > 0;
-
-            /// <summary>
-            /// Gets the has next page.
-            /// </summary>
-            /// <value>The has next page.</value>
-            public bool HasNextPage => PageIndex - IndexFrom + 1 < TotalPages;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref='PagedList{TSource, TResult}' /> class.
-            /// </summary>
-            /// <param name='source'>The source.</param>
-            /// <param name='converter'>The converter.</param>
-            /// <param name='pageIndex'>The index of the page.</param>
-            /// <param name='pageSize'>The size of the page.</param>
-            /// <param name='indexFrom'>The index from.</param>
-            public PagedList(IEnumerable<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter, int pageIndex, int pageSize, int indexFrom)
-            {
-                if (indexFrom > pageIndex)
-                {
-                    throw new ArgumentException($""indexFrom: {indexFrom} > pageIndex: {pageIndex}, must indexFrom <= pageIndex"");
-                }
-
-                if (source is IQueryable<TSource> querable)
-                {
-                    PageIndex = pageIndex;
-                    PageSize = pageSize;
-                    IndexFrom = indexFrom;
-                    TotalCount = querable.Count();
-                    TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
-
-                    var items = querable.Skip((PageIndex - IndexFrom) * PageSize).Take(PageSize).ToArray();
-
-                    Items = new List<TResult>(converter(items));
-                }
-                else
-                {
-                    PageIndex = pageIndex;
-                    PageSize = pageSize;
-                    IndexFrom = indexFrom;
-                    TotalCount = source.Count();
-                    TotalPages = (int)Math.Ceiling(TotalCount / (double)PageSize);
-
-                    var items = source.Skip((PageIndex - IndexFrom) * PageSize).Take(PageSize).ToArray();
-
-                    Items = new List<TResult>(converter(items));
-                }
-            }
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref='PagedList{TSource, TResult}' /> class.
-            /// </summary>
-            /// <param name='source'>The source.</param>
-            /// <param name='converter'>The converter.</param>
-            public PagedList(IPagedList<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter)
-            {
-                PageIndex = source.PageIndex;
-                PageSize = source.PageSize;
-                IndexFrom = source.IndexFrom;
-                TotalCount = source.TotalCount;
-                TotalPages = source.TotalPages;
-
-                Items = new List<TResult>(converter(source.Items));
-            }
-        }
-
-        /// <summary>
-        /// Provides some help methods for <see cref='IPagedList{T}'/> interface.
-        /// </summary>
-        public static class PagedList
-        {
-            /// <summary>
-            /// Creates an empty of <see cref='IPagedList{T}'/>.
-            /// </summary>
-            /// <typeparam name='T'>The type for paging </typeparam>
-            /// <returns>An empty instance of <see cref='IPagedList{T}'/>.</returns>
-            public static IPagedList<T> Empty<T>() => new PagedList<T>();
-            /// <summary>
-            /// Creates a new instance of <see cref='IPagedList{TResult}'/> from source of <see cref='IPagedList{TSource}'/> instance.
-            /// </summary>
-            /// <typeparam name='TResult'>The type of the result.</typeparam>
-            /// <typeparam name='TSource'>The type of the source.</typeparam>
-            /// <param name='source'>The source.</param>
-            /// <param name='converter'>The converter.</param>
-            /// <returns>An instance of <see cref='IPagedList{TResult}'/>.</returns>
-            public static IPagedList<TResult> From<TResult, TSource>(IPagedList<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter) => new PagedList<TSource, TResult>(source, converter);
-        }
-    }
-"
-                );
-
-
-
-
-
-
-
-
-
-            }
-
-            #endregion
-
-
-            #region Generic Repository
-
-
-            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraRepositoriesDataPath, "Repository.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using " + DataAccessNameSpace + @".Extensions;
-using " + DataAccessNameSpace + @".Interfaces.Data;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace " + DataAccessNameSpace + @".Repositories
-{
-    /// <summary>
-    /// Represents a default generic repository implements the <see cref='IRepository{TEntity}'/> interface.
-    /// </summary>
-    /// <typeparam name='TEntity'>The type of the entity.</typeparam>
-    public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
-    {
-        protected DbContext _dbContext;
-        protected readonly DbSet<TEntity> _dbSet;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref='Repository{TEntity}'/> class.
-        /// </summary>
-        /// <param name='dbContext'>The database context.</param>
-        public Repository(DbContext dbContext)
-        {
-            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
-            _dbSet = _dbContext.Set<TEntity>();
-        }
-
-        #region VARIOUS
-        /// <summary>
-        /// Gets all entities.
-        /// </summary>
-        /// <returns>The <see cref='IQueryable{TEntity}'/>.</returns>
-        public IQueryable<TEntity> GetAll()
-        {
-            return _dbSet;
-        }
-
-        /// <summary>
-        /// Gets the count based on a predicate.
-        /// </summary>
-        /// <param name='predicate'></param>
-        /// <returns></returns>
-        public int Count(Expression<Func<TEntity, bool>> predicate = null)
-        {
-            return predicate == null ? _dbSet.Count() : _dbSet.Count(predicate);
-        }
-
-        #endregion
-
-        #region PAGEDLIST
-        /// <summary>
-        /// Gets the <see cref='IPagedList{T}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='pageIndex'>The index of page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public IPagedList<TEntity> GetPagedList(Expression<Func<TEntity, bool>> predicate = null,
-                                                Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                int pageIndex = 0,
-                                                int pageSize = 10,
-                                                bool disableTracking = true)
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy == null ? query.ToPagedList(pageIndex, pageSize)
-                : orderBy(query).ToPagedList(pageIndex, pageSize);
-        }
-
-        /// <summary>
-        /// Gets the <see cref='IPagedList{TEntity}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='pageIndex'>The index of page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <param name='cancellationToken'>
-        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
-        /// </param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public Task<IPagedList<TEntity>> GetPagedListAsync(Expression<Func<TEntity, bool>> predicate = null,
-                                                           Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                           int pageIndex = 0,
-                                                           int pageSize = 20,
-                                                           bool disableTracking = true,
-                                                           CancellationToken cancellationToken = default(CancellationToken))
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy?.Invoke(query).ToPagedListAsync(pageIndex, pageSize, 0, cancellationToken)
-                ?? query.ToPagedListAsync(pageIndex, pageSize, 0, cancellationToken);
-        }
-
-        /// <summary>
-        /// Gets the <see cref='IPagedList{TResult}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='selector'>The selector for projection.</param>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='pageIndex'>The index of page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{TResult}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public IPagedList<TResult> GetPagedList<TResult>(Expression<Func<TEntity, TResult>> selector,
-                                                         Expression<Func<TEntity, bool>> predicate = null,
-                                                         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                         Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                         int pageIndex = 0,
-                                                         int pageSize = 20,
-                                                         bool disableTracking = true)
-            where TResult : class
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy == null ? query.Select(selector).ToPagedList(pageIndex, pageSize)
-                : orderBy(query).Select(selector).ToPagedList(pageIndex, pageSize);
-        }
-
-        /// <summary>
-        /// Gets the <see cref='IPagedList{TEntity}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='selector'>The selector for projection.</param>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='pageIndex'>The index of page.</param>
-        /// <param name='pageSize'>The size of the page.</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <param name='cancellationToken'>
-        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
-        /// </param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public Task<IPagedList<TResult>> GetPagedListAsync<TResult>(Expression<Func<TEntity, TResult>> selector,
-                                                                    Expression<Func<TEntity, bool>> predicate = null,
-                                                                    Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                                    Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                                    int pageIndex = 0,
-                                                                    int pageSize = 20,
-                                                                    bool disableTracking = true,
-                                                                    CancellationToken cancellationToken = default(CancellationToken))
-            where TResult : class
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy?.Invoke(query).Select(selector).ToPagedListAsync(pageIndex, pageSize, 0, cancellationToken)
-                ?? query.Select(selector).ToPagedListAsync(pageIndex, pageSize, 0, cancellationToken);
-        }
-        #endregion
-
-        #region LIST
-        /// <summary>
-        /// Gets the <see cref='IList{T}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public IList<TEntity> GetList(Expression<Func<TEntity, bool>> predicate = null,
-                                                Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                bool disableTracking = true)
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return
-                orderBy?.Invoke(query).ToList()
-                ?? query.ToList();
-        }
-
-        /// <summary>
-        /// Gets the <see cref='IList{TEntity}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <param name='cancellationToken'>
-        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
-        /// </param>
-        /// <returns>An <see cref='IList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> predicate = null,
-                                                           Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                           Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                           bool disableTracking = true,
-                                                           CancellationToken cancellationToken = default(CancellationToken))
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return
-                orderBy?.Invoke(query).ToListAsync(cancellationToken)
-                ?? query.ToListAsync(cancellationToken);
-        }
-
-        /// <summary>
-        /// Gets the <see cref='IList{TResult}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='selector'>The selector for projection.</param>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IList{TResult}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public IList<TResult> GetList<TResult>(Expression<Func<TEntity, TResult>> selector,
-                                                         Expression<Func<TEntity, bool>> predicate = null,
-                                                         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                         Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                         bool disableTracking = true)
-            where TResult : class
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy?.Invoke(query).Select(selector).ToList()
-                ?? query.Select(selector).ToList();
-        }
-
-        /// <summary>
-        /// Gets the <see cref='IList{TEntity}'/> based on a predicate, orderby delegate and page information. This method default no-tracking query.
-        /// </summary>
-        /// <param name='selector'>The selector for projection.</param>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <param name='cancellationToken'>
-        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
-        /// </param>
-        /// <returns>An <see cref='IList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public Task<List<TResult>> GetListAsync<TResult>(Expression<Func<TEntity, TResult>> selector,
-                                                                    Expression<Func<TEntity, bool>> predicate = null,
-                                                                    Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                                    Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                                    bool disableTracking = true,
-                                                                    CancellationToken cancellationToken = default(CancellationToken))
-            where TResult : class
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy != null ?
-                orderBy(query).Select(selector).ToListAsync(cancellationToken)
-                : query.Select(selector).ToListAsync(cancellationToken);
-        }
-        #endregion
-
-        #region FIRSTORDEFAULT
-        /// <summary>
-        /// Gets the first or default entity based on a predicate, orderby delegate and include delegate. This method default no-tracking query.
-        /// </summary>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public TEntity GetFirstOrDefault(Expression<Func<TEntity, bool>> predicate = null,
-                                         Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                         Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                         bool disableTracking = true)
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy == null ? query.FirstOrDefault()
-                : orderBy(query).FirstOrDefault();
-        }
-
-
-        /// <inheritdoc />
-        public async Task<TEntity> GetFirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-            Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-            bool disableTracking = true)
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy != null ? await orderBy(query).FirstOrDefaultAsync()
-                : await query.FirstOrDefaultAsync();
-        }
-
-        /// <summary>
-        /// Gets the first or default entity based on a predicate, orderby delegate and include delegate. This method default no-tracking query.
-        /// </summary>
-        /// <param name='selector'>The selector for projection.</param>
-        /// <param name='predicate'>A function to test each element for a condition.</param>
-        /// <param name='orderBy'>A function to order elements.</param>
-        /// <param name='include'>A function to include navigation properties</param>
-        /// <param name='disableTracking'><c>True</c> to disable changing tracking; otherwise, <c>false</c>. Default to <c>true</c>.</param>
-        /// <returns>An <see cref='IPagedList{TEntity}'/> that contains elements that satisfy the condition specified by <paramref name='predicate'/>.</returns>
-        /// <remarks>This method default no-tracking query.</remarks>
-        public TResult GetFirstOrDefault<TResult>(Expression<Func<TEntity, TResult>> selector,
-                                                  Expression<Func<TEntity, bool>> predicate = null,
-                                                  Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                  Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                  bool disableTracking = true)
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy != null ? orderBy(query).Select(selector).FirstOrDefault()
-                : query.Select(selector).FirstOrDefault();
-        }
-
-        /// <inheritdoc />
-        public async Task<TResult> GetFirstOrDefaultAsync<TResult>(Expression<Func<TEntity, TResult>> selector,
-                                                  Expression<Func<TEntity, bool>> predicate = null,
-                                                  Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-                                                  Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>> include = null,
-                                                  bool disableTracking = true)
-        {
-            IQueryable<TEntity> query = _dbSet;
-            if (disableTracking)
-                query = query.AsNoTracking();
-
-            if (include != null)
-                query = include(query);
-
-            if (predicate != null)
-                query = query.Where(predicate);
-
-            return orderBy != null
-                ? await orderBy(query).Select(selector).FirstOrDefaultAsync()
-                : await query.Select(selector).FirstOrDefaultAsync();
-        }
-        #endregion
-
-        #region FIND 
-
-        /// <summary>
-        /// Finds an entity with the given primary key values. If found, is attached to the context and returned.
-        /// If no entity is found, then null is returned.
-        /// </summary>
-        /// <param name='keyValues'>The values of the primary key for the entity to be found.</param>
-        /// <returns>The found entity or null.</returns>
-        public TEntity Find(params object[] keyValues)
-        {
-            var findResult = _dbSet.Find(keyValues);
-
-            if (findResult == null)
-                return null;
-
-            //var isDeleted = findResult.GetType().GetProperty('IsDeleted');
-            //if ((findResult.GetType().GetProperty('IsDeleted') != null) &&
-            //    ((bool)isDeleted.GetValue(findResult) == true))
-            //    return null;
-
-            return _dbSet.Find(keyValues);
-        }
-        //=> _dbSet.Where(x => x.)
-        //.Find(keyValues);
-
-        /// <summary>
-        /// Finds an entity with the given primary key values. If found, is attached to the context and returned. If no entity is found, then null is returned.
-        /// </summary>
-        /// <param name='keyValues'>The values of the primary key for the entity to be found.</param>
-        /// <returns>A <see cref='Task{TEntity}' /> that represents the asynchronous insert operation.</returns>
-        public async Task<TEntity> FindAsync(params object[] keyValues)
-        {
-            return await _dbSet.FindAsync(keyValues);
-        }
-
-        /// <summary>
-        /// Finds an entity with the given primary key values. If found, is attached to the context and returned. If no entity is found, then null is returned.
-        /// </summary>
-        /// <param name='keyValues'>The values of the primary key for the entity to be found.</param>
-        /// <param name='cancellationToken'>A <see cref='CancellationToken'/> to observe while waiting for the task to complete.</param>
-        /// <returns>A <see cref='Task{TEntity}'/> that represents the asynchronous find operation. The task result contains the found entity or null.</returns>
-        public async Task<TEntity> FindAsync(object[] keyValues, CancellationToken cancellationToken)
-        {
-            return await _dbSet.FindAsync(keyValues, cancellationToken);
-        }
-
-
-
-        /// <summary>
-        /// bool based on a predicate.
-        /// </summary>
-        /// <param name='predicate'></param>
-        /// <returns></returns>
-        public bool Any(Expression<Func<TEntity, bool>> predicate = null)
-        {
-            return predicate == null ? _dbSet.Any() : _dbSet.Any(predicate);
-        }
-
-
-        /// <summary>
-        /// bool based on a predicate.
-        /// </summary>
-        /// <param name='predicate'></param>
-        /// <param name='cancellationToken'>A <see cref='CancellationToken'/> to observe while waiting for the task to complete.</param>
-        /// <returns>true or false</returns>
-        public Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate = null, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            return predicate == null ? _dbSet.AnyAsync(cancellationToken) : _dbSet.AnyAsync(predicate, cancellationToken);
-        }
-
-        #endregion
-
-        #region INSERT
-        /// <summary>
-        /// Inserts a new entity synchronously.
-        /// </summary>
-        /// <param name='entity'>The entity to insert.</param>
-        public void Insert(TEntity entity)
-            => _dbSet.Add(entity);
-
-        /// <summary>
-        /// Inserts a range of entities synchronously.
-        /// </summary>
-        /// <param name='entities'>The entities to insert.</param>
-        public void Insert(params TEntity[] entities)
-            => _dbSet.AddRange(entities);
-
-        /// <summary>
-        /// Inserts a range of entities synchronously.
-        /// </summary>
-        /// <param name='entities'>The entities to insert.</param>
-        public void Insert(IEnumerable<TEntity> entities)
-            => _dbSet.AddRange(entities);
-
-        /// <summary>
-        /// Inserts a new entity asynchronously.
-        /// </summary>
-        /// <param name='entity'>The entity to insert.</param>
-        /// <param name='cancellationToken'>A <see cref='CancellationToken'/> to observe while waiting for the task to complete.</param>
-        /// <returns>A <see cref='Task'/> that represents the asynchronous insert operation.</returns>
-        public async Task InsertAsync(TEntity entity, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            await _dbSet.AddAsync(entity, cancellationToken);
-
-            // Shadow properties?
-            //var property = _dbContext.Entry(entity).Property('Created');
-            //if (property != null) {
-            //property.CurrentValue = DateTime.Now;
-            //}
-        }
-
-        /// <summary>
-        /// Inserts a range of entities asynchronously.
-        /// </summary>
-        /// <param name='entities'>The entities to insert.</param>
-        /// <returns>A <see cref='Task' /> that represents the asynchronous insert operation.</returns>
-        public Task InsertAsync(params TEntity[] entities)
-            => _dbSet.AddRangeAsync(entities);
-
-        /// <summary>
-        /// Inserts a range of entities asynchronously.
-        /// </summary>
-        /// <param name='entities'>The entities to insert.</param>
-        /// <param name='cancellationToken'>A <see cref='CancellationToken'/> to observe while waiting for the task to complete.</param>
-        /// <returns>A <see cref='Task'/> that represents the asynchronous insert operation.</returns>
-        public Task InsertAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default(CancellationToken))
-            => _dbSet.AddRangeAsync(entities, cancellationToken);
-
-        #endregion
-
-        #region UPDATE
-        /// <summary>
-        /// Updates the specified entity.
-        /// </summary>
-        /// <param name='entity'>The entity.</param>
-        public void Update(TEntity entity)
-            => _dbSet.Update(entity);
-
-        /// <summary>
-        /// Updates the specified entity.
-        /// </summary>
-        /// <param name='entity'>The entity.</param>
-        public void UpdateAsync(TEntity entity)
-            => _dbSet.Update(entity);
-
-        /// <summary>
-        /// Updates the specified entities.
-        /// </summary>
-        /// <param name='entities'>The entities.</param>
-        public void Update(params TEntity[] entities)
-            => _dbSet.UpdateRange(entities);
-
-        /// <summary>
-        /// Updates the specified entities.
-        /// </summary>
-        /// <param name='entities'>The entities.</param>
-        public void Update(IEnumerable<TEntity> entities)
-            => _dbSet.UpdateRange(entities);
-        #endregion
-
-        #region DELETE
-        /// <summary>
-        /// Deletes the specified entity.
-        /// </summary>
-        /// <param name='entity'>The entity to delete.</param>
-        public void Delete(TEntity entity)
-            => _dbSet.Remove(entity);
-
-        /// <summary>
-        /// Deletes the entity by the specified primary key.
-        /// </summary>
-        /// <param name='id'>The primary key value.</param>
-        public void Delete(object id)
-        {
-            // using a stub entity to mark for deletion
-            var typeInfo = typeof(TEntity).GetTypeInfo();
-            var key = _dbContext.Model.FindEntityType(typeInfo).FindPrimaryKey().Properties.FirstOrDefault();
-            var property = typeInfo.GetProperty(key?.Name);
-
-            if (property == null)
-            {
-                var ent = _dbSet.Find(id);
-                if (ent != null)
-                    Delete(ent);
-                return;
-            }
-
-            var entity = Activator.CreateInstance<TEntity>();
-            property.SetValue(entity, id);
-            _dbContext.Entry(entity).State = EntityState.Deleted;
-        }
-
-        /// <summary>
-        /// Deletes the specified entities.
-        /// </summary>
-        /// <param name='entities'>The entities.</param>
-        public void Delete(params TEntity[] entities)
-            => _dbSet.RemoveRange(entities);
-
-        /// <summary>
-        /// Deletes the specified entities.
-        /// </summary>
-        /// <param name='entities'>The entities.</param>
-        public void Delete(IEnumerable<TEntity> entities)
-            => _dbSet.RemoveRange(entities);
-        #endregion
-
-        #region RAW SQL
-        /// <summary>
-        /// Uses raw SQL queries to fetch the specified <typeparamref name='TEntity' /> data.
-        /// </summary>
-        /// <param name='sql'>The raw SQL.</param>
-        /// <param name='parameters'>The parameters.</param>
-        /// <returns>An <see cref='IQueryable{TEntity}' /> that contains elements that satisfy the condition specified by raw SQL.</returns>
-        public IQueryable<TEntity> FromSql(string sql, params object[] parameters)
-        {
-            return _dbSet.FromSqlRaw(sql, parameters);
-        }
-        #endregion
-    }
-}"
-                );
-
-
-
-
-
-
-
-
-
-            }
-
-            #endregion
-
-
-            #region UserInitializer
-
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraDataInitializerPath, "UserInitializer.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using " + DomainNameSpace + @".Entities;
-using Microsoft.AspNetCore.Identity;
-using System.Linq;
-namespace " + DataAccessNameSpace + @".Data.Initializer
-{
-    public class UserInitializer
-    {
-
-
-        public static void AddUser(ApplicationDbContext db, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<int>> roleManager)
-        {
-            if (!db.Roles.Any(r => r.Name ==""Admin""))
-            {
-                roleManager.CreateAsync(new IdentityRole<int>(""Admin"")).GetAwaiter().GetResult();
-            }
-
-            if (!db.Roles.Any(r => r.Name == ""User""))
-            {
-                roleManager.CreateAsync(new IdentityRole<int>(""User"")).GetAwaiter().GetResult();
-            }
-
-
-            if (!db.ApplicationUsers.Any(u => u.Email == ""admin@gmail.com""))
-                {
-                    userManager.CreateAsync(new ApplicationUser
-                    {
-                        UserName = ""Belal"",
-                        Email = ""admin@gmail.com"",
-                        EmailConfirmed = true,
-                        FullName = ""Belal Badawy""
-                      
-
-                    }, ""Admin123$"").GetAwaiter().GetResult();
-
-                    ApplicationUser user = db.ApplicationUsers.Where(u => u.Email == ""admin@gmail.com"").FirstOrDefault();
-                    userManager.AddToRoleAsync(user, ""Admin"").GetAwaiter().GetResult();
-                }
-
-            }
-
-
-        }
-    }
-
-");
-
-            }
-
-
-            #endregion
-
-
-            #region DbInitializer
-
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraDataInitializerPath, "DbInitializer.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using " + DomainNameSpace + @".Entities;
-using " + DataAccessNameSpace + @".Interfaces.Data;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-
-namespace " + DataAccessNameSpace + @".Data.Initializer
-{
-    public class DbInitializer : IDbInitializer
-    {
-        private readonly ApplicationDbContext _db;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole<int>> _roleManager;
-
-        public DbInitializer(ApplicationDbContext db, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<int>> roleManager)
-        {
-            _db = db;
-            _roleManager = roleManager;
-            _userManager = userManager;
-        }
-
-        public async void Initialize()
-        {
-            try
-            {
-                if (_db.Database.GetPendingMigrations().Count() > 0)
-                {
-                    _db.Database.Migrate();
-                }
-            }
-            catch (Exception ex)
-            {
-
-            }
-
-
-            UserInitializer.AddUser(_db, _userManager, _roleManager);
-            
-          
-
-        }
-    }
-}
-
-");
-
-            }
-
-
-            #endregion
-
-            #endregion
-
+            #region Data Classes
 
             #region EntityConfiguration
-
-            //List<Table> tableList = new List<Table>();
-
-            //using (SqlConnection connection = new SqlConnection(UtilityHelper.ConnectionString))
-            //{
-            //    try
-            //    {
-            //        connection.Open();
-
-            //        DataTable dataTable = new DataTable();
-            //        SqlDataAdapter dataAdapter = new SqlDataAdapter(UtilityHelper.GetSelectedTablesAndViews(connection.Database, tables.Where(o => o.Type != SchemaTypeEnum.StoredProcedure).Select(o => o.Title).ToList()), connection);
-            //        dataAdapter.Fill(dataTable);
-
-            //        // Process each table
-            //        foreach (DataRow dataRow in dataTable.Rows)
-            //        {
-            //            Table table = new Table();
-            //            table.Name = (string)dataRow["TABLE_NAME"];
-            //            table.Type = (string)dataRow["TABLE_TYPE"];
-            //            UtilityHelper.QueryTable(connection, table);
-            //            tableList.Add(table);
-            //        }
-
-            //    }
-            //    catch (Exception ex)
-            //    {
-
-            //    }
-            //    finally
-            //    {
-            //        connection.Close();
-            //    }
-            //}
 
             foreach (Table table in tableList)
             {
@@ -3095,7 +1275,7 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
                 string className = "";
 
                 #region  Model Classes
-                className = table.Name;
+                className = UtilityHelper.MakeSingular(table.Name);
 
                 using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraEntityConfigurationPath, className + "Configuration.cs")))
                 {
@@ -3104,11 +1284,11 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
 using " + DomainNameSpace + @".Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-namespace " + DataAccessNameSpace + @".EntityConfiguration
+namespace " + DataAccessNameSpace + @".Data.EntityConfiguration
 {
-    public partial class " + table.Name + @"Configuration : IEntityTypeConfiguration<" + table.Name + @">
+    public partial class " + className + @"Configuration : IEntityTypeConfiguration<" + className + @">
     {
-        public void Configure(EntityTypeBuilder<" + table.Name + @"> builder)
+        public void Configure(EntityTypeBuilder<" + className + @"> builder)
         {
             // table
             builder.ToTable(""" + table.Name + @""", ""dbo"");
@@ -3143,9 +1323,14 @@ namespace " + DataAccessNameSpace + @".EntityConfiguration
                     for (int i = 0; i < table.Columns.Count; i++)
                     {
                         Column column = table.Columns[i];
+                        var primaryKeys = table.PrimaryKeys.Select(o => o.Name).ToList();
 
-                        // Ignore any identity columns
-                        streamWriter.WriteLine(UtilityHelper.CreateBuilderPropertyForEntityFramework(column));
+                        if (!primaryKeys.Contains(column.Name))
+                        {
+                            // Ignore any identity columns
+                            streamWriter.WriteLine(UtilityHelper.CreateBuilderPropertyForEntityFramework(column));
+                        }
+
                     }
 
                     string sameKey = "";
@@ -3163,8 +1348,8 @@ namespace " + DataAccessNameSpace + @".EntityConfiguration
                         //        {
                         //            sameKey = foreignKeysList[j].ForeignKeyTableName;
 
-                        streamWriter.WriteLine("builder.HasOne(t => t." + f[0].PrimaryKeyTableName + "Class)");
-                        streamWriter.WriteLine(".WithMany(t => t." + f[0].ForeignKeyTableName + "List)");
+                        streamWriter.WriteLine("builder.HasOne(t => t." + UtilityHelper.MakeSingular(f[0].PrimaryKeyTableName) + ")");
+                        streamWriter.WriteLine(".WithMany(t => t." + UtilityHelper.MakePlural(f[0].ForeignKeyTableName) + ")");
                         streamWriter.WriteLine(".HasForeignKey(d => d." + f[0].Name + ")");
                         streamWriter.WriteLine(".HasConstraintName(" + @"""FK_" + f[0].ForeignKeyTableName + "_" + f[0].PrimaryKeyTableName + @""");");
 
@@ -3201,6 +1386,207 @@ namespace " + DataAccessNameSpace + @".EntityConfiguration
 
             #endregion
 
+            #region Initializer
+
+            #region IDbInitializer
+
+            using (
+                  StreamWriter streamWriter =
+                      new StreamWriter(Path.Combine(InfraDataInitializerPath, "IDbInitializer.cs")))
+            {
+
+                streamWriter.WriteLine(@"
+namespace " + DataAccessNameSpace + @".Data.Initializer {
+   public interface IDbInitializer
+    {
+        void Initialize();
+    }
+   
+}
+
+");
+
+            }
+
+            #endregion
+
+            #region DbInitializer
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraDataInitializerPath, "DbInitializer.cs")))
+            {
+
+                streamWriter.WriteLine(@"
+using System;
+using " + DomainNameSpace + @".Entities;
+using Microsoft.AspNetCore.Identity;
+
+namespace " + DataAccessNameSpace + @".Data.Initializer
+    {
+        public class DbInitializer : IDbInitializer
+        {
+            private readonly ApplicationDbContext _db;
+            private readonly UserManager<ApplicationUser> _userManager;
+            private readonly RoleManager<IdentityRole<" + UtilityHelper.GetIDKeyType(_appSetting) + @">> _roleManager;
+
+            public DbInitializer(ApplicationDbContext db, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<" + UtilityHelper.GetIDKeyType(_appSetting) + @">> roleManager)
+            {
+                _db = db;
+                _roleManager = roleManager;
+                _userManager = userManager;
+            }
+
+            public async void Initialize()
+            {
+                //try
+                //{
+                //    if (_db.Database.GetPendingMigrations().Count() > 0)
+                //    {
+                //        _db.Database.Migrate();
+                //    }
+                //}
+                //catch (Exception ex)
+                //{
+
+                //}
+
+                //AppClaimsInitializer.AppClaimsAsync(_db);
+                UserInitializer.AddUser(_db, _userManager, _roleManager);
+
+            }
+        }
+    }
+
+");
+
+            }
+
+            #endregion
+
+            #region UserInitializer
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraDataInitializerPath, "UserInitializer.cs")))
+            {
+
+                streamWriter.WriteLine(@"
+using System;
+using " + DomainNameSpace + @".Entities;
+using Microsoft.AspNetCore.Identity;
+
+namespace " + DataAccessNameSpace + @".Data.Initializer
+    {
+       public class UserInitializer
+    {
+        public static void AddUser(ApplicationDbContext db, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<Guid>> roleManager)
+        {
+            //if (!db.Roles.Any(r => r.Name == ""Admin""))
+            //{
+            //    roleManager.CreateAsync(new IdentityRole<Guid>(""Admin"")).GetAwaiter().GetResult();
+            //}
+
+                //if (!db.Roles.Any(r => r.Name == ""User""))
+                //{
+                //    roleManager.CreateAsync(new IdentityRole<Guid>(""User"")).GetAwaiter().GetResult();
+                //}
+
+
+                //if (!db.ApplicationUsers.Any(u => u.Email == ""admin@gmail.com""))
+                //{
+                //    userManager.CreateAsync(new ApplicationUser
+                //    {
+                //        UserName = ""Belal"",
+                //        Email = ""admin@gmail.com"",
+                //        EmailConfirmed = true,
+
+
+
+                //    }, ""Admin123$"").GetAwaiter().GetResult();
+
+                //    ApplicationUser user = db.ApplicationUsers.Where(u => u.Email == ""admin@gmail.com"").FirstOrDefault();
+
+                //    var newRoleName = ""Admin"";
+
+                //    roleManager.CreateAsync(new IdentityRole<Guid>(newRoleName)).GetAwaiter().GetResult();
+
+                //    var newRole = roleManager.FindByNameAsync(newRoleName).GetAwaiter().GetResult();
+
+                //    //if (newRole != null)
+                //    //{
+                //    //    List<AppClaim> existsAppClaims = new List<AppClaim>();
+
+                //    //    existsAppClaims = db.AppClaim.ToListAsync().GetAwaiter().GetResult();
+
+                //    //    var claims = roleManager.GetClaimsAsync(newRole).GetAwaiter().GetResult();
+
+                //    //    foreach (var ca in existsAppClaims)
+                //    //    {
+                //    //        if (!string.IsNullOrEmpty(ca.ClaimTitle))
+                //    //        {
+                //    //            if (!claims.Any(o => o.Value.ToUpper() == ca.ClaimTitle.ToUpper()))
+                //    //            {
+                //    //                roleManager.AddClaimAsync(newRole, new Claim(""permission"", ca.ClaimTitle.ToUpper())).GetAwaiter().GetResult();
+                //    //            }
+                //    //        }
+                //    //    }
+                //    //}
+
+                //    userManager.AddToRoleAsync(user, newRoleName).GetAwaiter().GetResult();
+                //}
+            }
+        }
+    }
+
+");
+
+            }
+
+            #endregion
+
+            #endregion
+
+            #region Repositories
+
+            foreach (Table table in tableList)
+            {
+                var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
+
+                string className = "";
+
+                #region  Model Classes
+                className = UtilityHelper.MakeSingular(table.Name);
+
+                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraRepositoriesPath, className + "RepositoryAsync.cs")))
+                {
+                    // Create the header for the class
+                    streamWriter.WriteLine(@"
+using " + DomainNameSpace + @".Entities;
+using " + ApplicationNameSpace + @".Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
+namespace " + DataAccessNameSpace + @".Data.Repositories
+{
+     public class " + className + @"RepositoryAsync : Repository<" + className + @">, I" + className + @"RepositoryAsync
+    {
+        public " + className + @"RepositoryAsync(DbContext context) : base(context)
+        {
+
+        }
+    }
+
+}
+                    ");
+
+
+
+                }
+                #endregion
+
+
+            }
+
+            #endregion
 
             #region ApplicationDbContext
 
@@ -3210,21 +1596,38 @@ namespace " + DataAccessNameSpace + @".EntityConfiguration
             {
                 // Create the header for the class
                 streamWriter.WriteLine(@"
+
+using " + ApplicationNameSpace + @".Interfaces;
 using " + DomainNameSpace + @".Entities;
-using " + DataAccessNameSpace + @".EntityConfiguration;
+using " + DomainNameSpace + @".Interfaces;
+using " + DataAccessNameSpace + @".Extensions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-
-
+using System;
+using System.Reflection;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace " + DataAccessNameSpace + @".Data
 {
-  public class ApplicationDbContext : IdentityDbContext<IdentityUser<int>, IdentityRole<int>, int>
+ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityRole<" + UtilityHelper.GetIDKeyType(_appSetting) + @">, " + UtilityHelper.GetIDKeyType(_appSetting) + @">
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
+        private readonly IDateTimeService _dateTime;
+
+        private IHttpContextAccessor _httpContextAccessor;
+
+        public ApplicationDbContext(
+            DbContextOptions<ApplicationDbContext> options,
+            IHttpContextAccessor httpContextAccessor,
+            IDateTimeService dateTime
+        ) : base(options)
         {
+            ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
+            _dateTime = dateTime;
+            _httpContextAccessor = httpContextAccessor;
 
         }
 
@@ -3234,21 +1637,115 @@ namespace " + DataAccessNameSpace + @".Data
 
                 foreach (Table table in tableList)
                 {
-                    streamWriter.WriteLine("public virtual DbSet<" + table.Name + "> " + table.Name + " { get; set; }");
+                    streamWriter.WriteLine("public virtual DbSet<" + UtilityHelper.MakeSingular(table.Name) + "> " + UtilityHelper.MakePlural(table.Name) + " { get; set; }");
                 }
 
                 streamWriter.WriteLine(" protected override void OnModelCreating(ModelBuilder modelBuilder){");
+
+                streamWriter.WriteLine("#region Entities Configuration");
 
                 foreach (Table table in tableList)
                 {
                     streamWriter.WriteLine(" // modelBuilder.ApplyConfiguration(new " + table.Name + "Configuration());");
                 }
 
+                streamWriter.WriteLine("#endregion");
+
+
                 streamWriter.WriteLine("modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());");
 
 
+                streamWriter.WriteLine(@" foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(ISoftDelete).IsAssignableFrom(entityType.ClrType))
+                {
+                    entityType.AddSoftDeleteQueryFilter();
+                }
+            }");
+
                 streamWriter.WriteLine("base.OnModelCreating(modelBuilder);");
                 streamWriter.WriteLine("}");
+
+                streamWriter.WriteLine(@"public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default(CancellationToken))
+        {
+
+            string userId = _httpContextAccessor?.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            foreach (var entry in ChangeTracker.Entries<IAuditable>())
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        entry.Entity.CreatedAt = _dateTime.NowUtc;
+                        entry.Entity.CreatedBy = (string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId));
+                        break;
+                    case EntityState.Modified:
+                        entry.Entity.LastModifiedAt = _dateTime.NowUtc;
+                        entry.Entity.LastModifiedBy = (string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId));
+                        break;
+                    case EntityState.Deleted:
+                        entry.Entity.LastModifiedAt = _dateTime.NowUtc;
+                        entry.Entity.LastModifiedBy = (string.IsNullOrEmpty(userId) ? null : Guid.Parse(userId));
+                        break;
+                }
+            }
+
+            foreach (var entry in ChangeTracker.Entries<ISoftDelete>())
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Deleted:
+                        entry.State = EntityState.Modified;
+                        entry.Entity.SoftDeleted = true;
+                        break;
+                }
+            }
+
+            try
+            {
+                return await base.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                foreach (var item in ex.Entries)
+                {
+                    if (item.Entity is IDataConcurrency)
+                    {
+                        var currentValues = item.CurrentValues;
+                        var dbValues = item.GetDatabaseValues();
+
+                        foreach (var prop in currentValues.Properties)
+                        {
+                            var currentValue = currentValues[prop];
+                            var dbValue = dbValues[prop];
+                        }
+
+                        // Refresh the original values to bypass next concurrency check
+                        item.OriginalValues.SetValues(dbValues);
+                    }
+                    else
+                    {
+                        throw new ApplicationException(""Don’t know handling of concurrency conflict "" + item.Metadata.Name);
+                    }
+        }
+    }
+            catch (DbUpdateException e)
+            {
+                //This either returns a error string, or null if it can’t handle that error
+                var sqlException = e.GetBaseException();
+                if (sqlException != null)
+                {
+                    throw new ApplicationException(sqlException.Message, sqlException.InnerException); //return the error string
+}
+throw new ApplicationException(""couldn’t handle that error""); //return the error string
+                //couldn’t handle that error, so rethrow
+            }
+
+            return 0;
+        }");
+
+
+
                 streamWriter.WriteLine("}");
                 streamWriter.WriteLine("}");
 
@@ -3259,6 +1756,152 @@ namespace " + DataAccessNameSpace + @".Data
 
             #endregion
 
+            #region Repository
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraDataFolderPath, "Repository.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using " + ApplicationNameSpace + @".Interfaces;
+using " + DomainNameSpace + @".Common;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
+
+namespace " + DataAccessNameSpace + @".Data
+{
+ ");
+
+                streamWriter.WriteLine(@" public class Repository<T> : IGenericRepositoryAsync<T> where T : class
+    {
+        protected readonly DbContext DbContext;
+        protected readonly DbSet<T> DbSet;
+
+        public Repository(DbContext context)
+        {
+            DbContext = context ?? throw new ArgumentException(nameof(context));
+            DbSet = DbContext.Set<T>();
+        }
+
+        public virtual async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate = null)
+        {
+            return await DbSet.AnyAsync(predicate);
+        }
+
+        public virtual async Task<int> CountAsync(Expression<Func<T, bool>> predicate = null)
+        {
+            return await DbSet.CountAsync(predicate);
+        }
+
+        public virtual async Task<T> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = DbSet;
+
+            foreach (Expression<Func<T, object>> include in includes)
+                query = query.Include(include);
+
+            if (predicate != null) query = query.Where(predicate);
+
+            return orderBy != null ? (await orderBy(query).FirstOrDefaultAsync()) : (await query.FirstOrDefaultAsync());
+        }
+
+        public virtual async Task<T> GetAsync(object id)
+        {
+            return await DbSet.FindAsync(id);
+        }
+
+        public virtual async Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = DbSet;
+            query = query.AsNoTracking();
+
+            foreach (Expression<Func<T, object>> include in includes)
+                query = query.Include(include);
+
+            if (predicate != null) query = query.Where(predicate);
+
+            return orderBy != null ? await orderBy(query).ToListAsync() : await query.ToListAsync();
+        }
+
+        public async Task<PagedResult<T>> GetPagedListAsync(Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, int pageIndex = 0, int pageSize = 10, params Expression<Func<T, object>>[] includes)
+        {
+            IQueryable<T> query = DbSet;
+            query = query.AsNoTracking();
+
+            foreach (Expression<Func<T, object>> include in includes)
+                query = query.Include(include);
+
+            if (predicate != null) query = query.Where(predicate);
+
+            //  return orderBy != null ? await orderBy(query).ToListAsync() : await query.ToListAsync();
+
+            var pagedResult = new PagedResult<T>();
+            pagedResult.TotalCount = await DbSet.CountAsync();
+            pagedResult.FilteredTotalCount = await query.CountAsync();
+            pagedResult.Data = (orderBy != null ? await orderBy(query).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync() : await query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync());
+
+            return pagedResult;
+        }
+
+
+        public async Task<T> AddAsync(T entity)
+        {
+            await DbSet.AddAsync(entity);
+            return entity;
+        }
+
+        public async Task AddAsync(IEnumerable<T> entities)
+        {
+            await DbSet.AddRangeAsync(entities);
+        }
+
+        public async Task UpdateAsync(T entity)
+        {
+            DbSet.Update(entity);
+        }
+
+        public async Task UpdateAsync(IEnumerable<T> entities)
+        {
+            DbSet.UpdateRange(entities);
+        }
+
+        public async Task DeleteAsync(object id)
+        {
+            T entityToDelete = await DbSet.FindAsync(id);
+            DbSet.Remove(entityToDelete);
+        }
+
+        public async Task DeleteAsync(T entity)
+        {
+            DbSet.Remove(entity);
+        }
+
+        public async Task DeleteAsync(IEnumerable<T> entities)
+        {
+            DbSet.RemoveRange(entities);
+        }
+
+
+        public void Dispose()
+        {
+            DbContext?.Dispose();
+        }
+
+
+    }");
+
+
+
+
+            }
+
+
+            #endregion
 
             #region UnitOfWork
 
@@ -3268,194 +1911,95 @@ namespace " + DataAccessNameSpace + @".Data
             {
                 // Create the header for the class
                 streamWriter.WriteLine(@"
+using " + ApplicationNameSpace + @".Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using " + DataAccessNameSpace + @".Interfaces.Data;
-using " + DataAccessNameSpace + @".Interfaces.Repositories;
-using " + DataAccessNameSpace + @".Repositories;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 
-namespace " + DataAccessNameSpace + @".Data {
-  /// <summary>
-    /// Represents the default implementation of the <see cref='IUnitOfWork'/> and <see cref='IUnitOfWork{TContext}'/> interface.
-    /// </summary>
-    /// <typeparam name='TContext'>The type of the db context.</typeparam>
-    public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork where TContext : DbContext
+namespace " + DataAccessNameSpace + @".Data
+{
+ ");
+
+                streamWriter.WriteLine(@"   public class UnitOfWork : IUnitOfWork, IDisposable
     {
-        private bool _disposed = false;
         private Dictionary<Type, object> _repositories;
-        private readonly TContext _context;
-
-        /// <summary>
-        /// Gets the db context.
-        /// </summary>
-        /// <returns>The instance of type <typeparamref name='TContext'/>.</returns>
-        public TContext DbContext
-        {
-            get { return _context; }
-        }
-
-
-    
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref='UnitOfWork{TContext}'/> class.
-        /// </summary>
-        /// <param name='context'>The context.</param>
-        public UnitOfWork(TContext context)
+        public DbContext _context { get; }
+        public UnitOfWork(DbContext context)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-    
-
-
-         #region SQL
         /// <summary>
-        /// Uses raw SQL queries to fetch the specified <typeparamref name='TEntity' /> data.
+        /// Initializes an instance of the repository
         /// </summary>
-        /// <typeparam name='TEntity'>The type of the entity.</typeparam>
-        /// <param name='sql'>The raw SQL.</param>
-        /// <param name='parameters'>The parameters.</param>
-        /// <returns>An <see cref='IQueryable{T}' /> that contains elements that satisfy the condition specified by raw SQL.</returns>
-        public IQueryable<TEntity> FromSqlRaw<TEntity>(string sql, params object[] parameters) where TEntity : class
-        {
-            return _context.Set<TEntity>().FromSqlRaw(sql, parameters);
-        }
-
-        /// <summary>
-        /// Executes the specified raw SQL command.
-        /// </summary>
-        /// <param name='sql'>The raw SQL.</param>
-        /// <param name='parameters'>The parameters.</param>
-        /// <returns>The number of state entities written to database.</returns>
-        public int ExecuteSqlCommand(string sql, params object[] parameters)
-        {
-            return _context.Database.ExecuteSqlCommand(sql, parameters);
-        }
-
-        #endregion
-
-        #region GET
-
-
-
-        ///// <summary>
-        ///// Gets the specified repository for the <typeparamref name='TEntity'/>.
-        ///// </summary>
-        ///// <typeparam name='TEntity'>The type of the entity.</typeparam>
-        ///// <returns>An instance of type inherited from <see cref='IRepository{TEntity}'/> interface.</returns>
-        //public IRepository<TEntity> GetGenericRepository<TEntity>() where TEntity : class
-        //{
-        //    if (_repositories == null)
-        //        _repositories = new Dictionary<Type, object>();
-
-        //    var type = typeof(TEntity);
-        //    if (!_repositories.ContainsKey(type))
-        //        _repositories[type] = new Repository<TEntity>(_context);
-
-        //    return (IRepository<TEntity>)_repositories[type];
-        //}
-
-
-        public  TEntity GetRepository<TEntity>() where TEntity : class
-        {
-
-            var interfaceType = typeof(TEntity);
-
-
-            if (_repositories == null)
-            {
-                _repositories = new Dictionary<Type, object>();
-
-              
-            }
-            var type = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s => s.GetTypes())
-                .Where(x => x.GetInterface(interfaceType.Name) != null).FirstOrDefault();
-
-            if (type != null)
-            {
-                if (!_repositories.ContainsKey(interfaceType))
+        /// <typeparam name=""TEntity"">The entity type to initialize with</typeparam>
+        /// <returns>An initialized repository</returns>
+        public RepositoryType Repository<RepositoryType>() where RepositoryType : class
                 {
-                    _repositories[interfaceType] = Activator.CreateInstance(type, _context);
+                    // return (RepositoryType) GetOrAddRepository(typeof(RepositoryType), new RepositoryType(Context));
+
+                    var interfaceType = typeof(RepositoryType);
+
+
+                    if (_repositories == null)
+                    {
+                        _repositories = new Dictionary<Type, object>();
+
+
+                    }
+                    var type = AppDomain.CurrentDomain.GetAssemblies()
+                        .SelectMany(s => s.GetTypes())
+                        .Where(x => x.GetInterface(interfaceType.Name) != null).FirstOrDefault();
+
+                    if (type != null)
+                    {
+                        if (!_repositories.ContainsKey(interfaceType))
+                        {
+                            _repositories[interfaceType] = Activator.CreateInstance(type, _context);
+                        }
+
+                        return (RepositoryType)_repositories[interfaceType];
+
+                    }
+
+                    return null;
                 }
 
-                return (TEntity) _repositories[interfaceType];
+
+
+                public async Task<int> CommitAsync()
+                {
+                    return await _context.SaveChangesAsync();
+                }
+
+                /// <summary>
+                /// Releases the allocated resources for this context
+                /// </summary>
+                public void Dispose()
+                {
+                    _context?.Dispose();
+                }
+
+                //internal object GetOrAddRepository(Type type, object repo)
+                //{
+                //    // Initialize dictionary if it is null
+                //    _repositories ??= new Dictionary<(Type type, string Name), object>();
+
+                //    // Pull out the repository if it exists
+                //    if (_repositories.TryGetValue((type, repo.GetType().FullName), out var repository)) return repository;
+
+                //    // Add the repository to the dictionary
+                //    _repositories.Add((type, repo.GetType().FullName), repo);
+                //    return repo;
+                //}
+
 
             }
 
 
-            return null;
-        }
-
-
-        #endregion
-
-        #region SAVE
-        /// <inheritdoc />
-        /// <summary>
-        /// Saves all changes made in this context to the database.
-        /// </summary>
-        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
-        /// <returns>The number of state entries written to the database.</returns>
-        public int SaveChanges()
-        {
-
-            return _context.SaveChanges();
-
-
-        }
-
-        /// <summary>
-        /// Asynchronously saves all changes made in this unit of work to the database.
-        /// </summary>
-        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
-        /// <returns>A <see cref='Task{TResult}'/> that represents the asynchronous save operation. The task result contains the number of state entities written to database.</returns>
-        public async Task<int> SaveChangesAsync()
-        {
-
-            return await _context.SaveChangesAsync();
-
-
-        }
-
-        #endregion
-
-        #region Dispose
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <param name='disposing'>The disposing.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed && disposing)
-            {   // clear repositories
-                _repositories?.Clear();
-               
-                // dispose the db context.
-                _context.Dispose();
-            }
-
-            _disposed = true;
-        }
-        #endregion
-    }
-}
-
-");
+        }");
 
 
 
@@ -3464,6 +2008,862 @@ namespace " + DataAccessNameSpace + @".Data {
 
 
             #endregion
+
+            #endregion
+
+            #region Extensions Classes
+
+            //            #region  EnumerablePagedListExtensions
+
+            //            using (
+            //                StreamWriter streamWriter =
+            //                    new StreamWriter(Path.Combine(InfraExtensionsPath, "EnumerablePagedListExtensions.cs")))
+            //            {
+            //                // Create the header for the class
+            //                streamWriter.WriteLine(@"
+            //using " + DataAccessNameSpace + @".Interfaces.Data;
+            //using " + DataAccessNameSpace + @".Repositories;
+            //using System;
+            //using System.Collections.Generic;
+
+            //namespace " + DataAccessNameSpace + @".Extensions
+            //{
+            //    /// <summary>
+            //    /// Provides some extension methods for <see cref='IEnumerable{T}'/> to provide paging capability.
+            //    /// </summary>
+            //    public static class EnumerablePagedListExtensions
+            //    {
+            //        /// <summary>
+            //        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='pageIndex'/> and <paramref name='pageSize'/>.
+            //        /// </summary>
+            //        /// <typeparam name='T'>The type of the source.</typeparam>
+            //        /// <param name='source'>The source to paging.</param>
+            //        /// <param name='pageIndex'>The index of the page.</param>
+            //        /// <param name='pageSize'>The size of the page.</param>
+            //        /// <param name='indexFrom'>The start index value.</param>
+            //        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
+            //        public static IPagedList<T> ToPagedList<T>(this IEnumerable<T> source, int pageIndex, int pageSize, int indexFrom = 0) => new PagedList<T>(source, pageIndex, pageSize, indexFrom);
+
+            //        /// <summary>
+            //        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='converter'/>, <paramref name='pageIndex'/> and <paramref name='pageSize'/>
+            //        /// </summary>
+            //        /// <typeparam name='TSource'>The type of the source.</typeparam>
+            //        /// <typeparam name='TResult'>The type of the result</typeparam>
+            //        /// <param name='source'>The source to convert.</param>
+            //        /// <param name='converter'>The converter to change the <typeparamref name='TSource'/> to <typeparamref name='TResult'/>.</param>
+            //        /// <param name='pageIndex'>The page index.</param>
+            //        /// <param name='pageSize'>The page size.</param>
+            //        /// <param name='indexFrom'>The start index value.</param>
+            //        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
+            //        public static IPagedList<TResult> ToPagedList<TSource, TResult>(this IEnumerable<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter, int pageIndex, int pageSize, int indexFrom = 0) => new PagedList<TSource, TResult>(source, converter, pageIndex, pageSize, indexFrom);
+            //    }
+            //}
+
+            //");
+
+            //            }
+
+            //            #endregion
+
+            //            #region QueryablePageListExtensions
+
+
+
+
+
+            //            using (
+            //                StreamWriter streamWriter =
+            //                    new StreamWriter(Path.Combine(InfraExtensionsPath, "QueryablePageListExtensions.cs")))
+            //            {
+            //                // Create the header for the class
+            //                streamWriter.WriteLine(@"
+            //using " + DataAccessNameSpace + @".Interfaces.Data;
+            //using " + DataAccessNameSpace + @".Repositories;
+            //using Microsoft.EntityFrameworkCore;
+            //using System;
+            //using System.Linq;
+            //using System.Threading;
+            //using System.Threading.Tasks;
+
+            //namespace " + DataAccessNameSpace + @".Extensions
+            //{
+            //    public static class QueryablePageListExtensions
+            //    {
+            //        /// <summary>
+            //        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='pageIndex'/> and <paramref name='pageSize'/>.
+            //        /// </summary>
+            //        /// <typeparam name='T'>The type of the source.</typeparam>
+            //        /// <param name='source'>The source to paging.</param>
+            //        /// <param name='pageIndex'>The index of the page.</param>
+            //        /// <param name='pageSize'>The size of the page.</param>
+            //        /// <param name='cancellationToken'>
+            //        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
+            //        /// </param>
+            //        /// <param name='indexFrom'>The start index value.</param>
+            //        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
+            //        public static async Task<IPagedList<T>> ToPagedListAsync<T>(this IQueryable<T> source, int pageIndex, int pageSize, int indexFrom = 0, CancellationToken cancellationToken = default(CancellationToken))
+            //        {
+            //            if (indexFrom > pageIndex)
+            //            {
+            //                throw new ArgumentException($""indexFrom: { indexFrom} > pageIndex: { pageIndex}, must indexFrom <= pageIndex"");
+            //            }
+
+            //            var count = await source.CountAsync(cancellationToken).ConfigureAwait(false);
+            //            var items = await source.Skip((pageIndex - indexFrom) * pageSize)
+            //                .Take(pageSize).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            //            var pagedList = new PagedList<T>()
+            //            {
+            //                PageIndex = pageIndex,
+            //                PageSize = pageSize,
+            //                IndexFrom = indexFrom,
+            //                TotalCount = count,
+            //                Items = items,
+            //                TotalPages = (int)Math.Ceiling(count / (double)pageSize)
+            //            };
+
+            //            return pagedList;
+            //        }
+            //    }
+            //}
+
+            //");
+
+            //            }
+
+            //            #endregion
+
+            #region LinqExtensions
+
+            using (
+    StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(InfraExtensionsPath, "LinqExtensions.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using " + DomainNameSpace + @".Common;
+using System;
+using System.Linq;
+using System.Linq.Expressions;
+
+namespace " + DataAccessNameSpace + @".Extensions
+{
+    public static class LinqExtensions
+    {
+        public static IQueryable<T> OrderByDynamic<T>(
+            this IQueryable<T> query,
+            string orderByMember,
+            DtOrderDir ascendingDirection)
+        {
+            var param = Expression.Parameter(typeof(T), ""c"");
+
+                var body = orderByMember.Split('.').Aggregate<string, Expression>(param, Expression.PropertyOrField);
+
+                var queryable = ascendingDirection == DtOrderDir.Asc ?
+                    (IOrderedQueryable<T>)Queryable.OrderBy(query.AsQueryable(), (dynamic)Expression.Lambda(body, param)) :
+                    (IOrderedQueryable<T>)Queryable.OrderByDescending(query.AsQueryable(), (dynamic)Expression.Lambda(body, param));
+
+                return queryable;
+            }
+
+            public static IQueryable<T> WhereDynamic<T>(
+                this IQueryable<T> sourceList, string query)
+            {
+
+                if (string.IsNullOrEmpty(query))
+                {
+                    return sourceList;
+                }
+
+                try
+                {
+
+                    var properties = typeof(T).GetProperties()
+                        .Where(x => x.CanRead && x.CanWrite && !x.GetGetMethod().IsVirtual);
+
+                    //Expression
+                    sourceList = sourceList.Where(c =>
+                        properties.Any(p => p.GetValue(c) != null && p.GetValue(c).ToString()
+                            .Contains(query, StringComparison.InvariantCultureIgnoreCase)));
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+
+                return sourceList;
+            }
+        }
+    }
+
+");
+
+            }
+
+            #endregion
+
+            #region SoftDeleteQueryExtension
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraExtensionsPath, "SoftDeleteQueryExtension.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using " + DomainNameSpace + @".Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using System;
+using System.Linq.Expressions;
+using System.Reflection;
+
+
+namespace " + DataAccessNameSpace + @".Extensions
+{
+     public static class SoftDeleteQueryExtension
+    {
+        public static void AddSoftDeleteQueryFilter(this IMutableEntityType entityData)
+        {
+            var methodToCall = typeof(SoftDeleteQueryExtension).GetMethod(nameof(GetSoftDeleteFilter),
+                    BindingFlags.NonPublic | BindingFlags.Static)
+                .MakeGenericMethod(entityData.ClrType);
+            var filter = methodToCall.Invoke(null, new object[] { });
+            entityData.SetQueryFilter((LambdaExpression)filter);
+            entityData.AddIndex(entityData.FindProperty(nameof(ISoftDelete.SoftDeleted)));
+        }
+
+        private static LambdaExpression GetSoftDeleteFilter<TEntity>() where TEntity : class, ISoftDelete
+        {
+            Expression<Func<TEntity, bool>> filter = x => !x.SoftDeleted;
+            return filter;
+        }
+    }
+}
+
+");
+
+            }
+
+            #endregion
+
+            #endregion
+
+
+            #region Identity
+
+            #region AuthService
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraIdentityServicesPath, "AuthService.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+
+using " + ApplicationNameSpace + @".Interfaces;
+using " + DomainNameSpace + @".Common;
+using " + DomainNameSpace + @".Entities;
+using " + DomainNameSpace + @".Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+
+
+namespace " + DataAccessNameSpace + @".Identity.Services
+{
+   public class AuthService : IAuthService
+    {
+        public Guid? UserId => null;
+
+
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly JwtSettings _jwtSettings;
+
+
+        public AuthService(
+            UserManager<ApplicationUser> userManager,
+            IOptions<JwtSettings> jwtSettings,
+            SignInManager<ApplicationUser> signInManager
+            )
+        {
+            _userManager = userManager;
+            _jwtSettings = jwtSettings.Value;
+            _signInManager = signInManager;
+        }
+
+        public async Task<Response<AuthenticationResponse>> AuthenticateAsync(LoginModel loginModel)
+        {
+            var user = await _userManager.FindByEmailAsync(loginModel.Email);
+
+            if (user == null)
+            {
+              //  throw new Exception($""User with { loginModel.Email } not found."");
+              return new Response<AuthenticationResponse>($""User with {loginModel.Email} not found."");
+            }
+
+            var result = await _signInManager.PasswordSignInAsync(user.UserName, loginModel.Password, false, lockoutOnFailure: false);
+
+            if (!result.Succeeded)
+            {
+                return new Response<AuthenticationResponse>($""Credentials for '{loginModel.Email} aren't valid'."");
+                //throw new Exception($""Credentials for '{loginModel.Email} aren't valid'."");
+            }
+
+            JwtSecurityToken jwtSecurityToken = await GenerateToken(user);
+
+            AuthenticationResponse response = new AuthenticationResponse
+            {
+                Id = user.Id.ToString(),
+                Token = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken),
+                Email = user.Email,
+                UserName = user.UserName
+            };
+
+            return new Response<AuthenticationResponse>(response);
+        }
+
+        public async Task<Response<Guid>> RegisterAsync(RegistrationModel request)
+        {
+            var user = new ApplicationUser
+            {
+                Email = request.Email,
+                FullName = request.FullName,
+                EmailConfirmed = false,
+                UserName = request.Email
+            };
+
+            var existingEmail = await _userManager.FindByEmailAsync(request.Email);
+
+            if (existingEmail == null)
+            {
+                var result = await _userManager.CreateAsync(user, request.Password);
+
+                if (result.Succeeded)
+                {
+                    return new Response<Guid>(user.Id);
+                }
+                else
+                {
+                    return new Response<Guid>($""{ string.Join(""; "", result.Errors.Select(o => o.Description).ToList())}"");
+                }
+            }
+            else
+            {
+                return new Response<Guid>($""Email {request.Email } already exists."");
+            }
+        }
+
+        private async Task<JwtSecurityToken> GenerateToken(ApplicationUser user)
+        {
+            var userClaims = await _userManager.GetClaimsAsync(user);
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var roleClaims = new List<Claim>();
+
+            userClaims.Add(new Claim(CustomClaimTypes.Permission, AppPermissions.AppClaim.List));
+
+            for (int i = 0; i < roles.Count; i++)
+            {
+                roleClaims.Add(new Claim(""roles"", roles[i]));
+            }
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(""uid"", user.Id.ToString())
+            }
+            .Union(userClaims)
+            .Union(roleClaims);
+
+            var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Key));
+            var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
+
+            var jwtSecurityToken = new JwtSecurityToken(
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
+                claims: claims,
+                //  expires: DateTime.UtcNow.AddMinutes(_jwtSettings.DurationInMinutes),
+                expires: DateTime.Now.AddMinutes(120),
+                signingCredentials: signingCredentials);
+            return jwtSecurityToken;
+        }
+    }
+}
+
+");
+
+            }
+
+            #endregion
+
+
+
+            #region PermissionAuthorizationHandler
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionAuthorizationHandler.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+
+
+using " + DomainNameSpace + @".Common;
+using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
+
+namespace " + DataAccessNameSpace + @".Identity
+{
+   
+     public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionRequirement>
+    {
+       
+        public PermissionAuthorizationHandler()
+        {
+        }
+
+        #region From db Context
+
+        //UserManager<ApplicationUser> _userManager;
+        //RoleManager<IdentityRole<Guid>> _roleManager;
+
+        //public PermissionAuthorizationHandler(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole<Guid>> roleManager)
+        //{
+        //    _userManager = userManager;
+        //    _roleManager = roleManager;
+        //}
+
+        //protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
+        //{
+        //    if (context.User == null)
+        //    {
+        //        return;
+        //    }
+
+        //    // Get all the roles the user belongs to and check if any of the roles has the permission required
+        //    // for the authorization to succeed.
+        //    var user = await _userManager.GetUserAsync(context.User);
+        //    if (user == null)
+        //    {
+        //        return;
+        //    }
+        //    var userRoleNames = await _userManager.GetRolesAsync(user);
+        //    var userRoles = _roleManager.Roles.Where(x => userRoleNames.Contains(x.Name));
+
+        //    foreach (var role in userRoles)
+        //    {
+        //        var roleClaims = await _roleManager.GetClaimsAsync(role);
+        //        var permissions = roleClaims.Where(x => x.Type == CustomClaimTypes.Permission &&
+        //                                                x.Value == requirement.Permission &&
+        //                                                x.Issuer == ""LOCAL AUTHORITY"")
+        //            .Select(x => x.Value);
+
+                //        if (permissions.Any())
+                //        {
+                //            context.Succeed(requirement);
+                //            return;
+                //        }
+                //    }
+                //}
+
+                #endregion
+
+
+                #region From Token
+
+
+
+
+
+        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, PermissionRequirement requirement)
+        {
+            if (context.User == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            // If user does not have the scope claim, get out of here
+            if (context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
+                                           c.Value.ToUpper() == requirement.Permission.ToUpper()
+                                           //  && c.Issuer == ""http://localhost:55445""
+                                           ))
+            {
+                context.Succeed(requirement);
+                return Task.CompletedTask;
+            }
+
+            return Task.CompletedTask;
+        }
+        #endregion
+    }
+}
+
+");
+
+            }
+
+            #endregion
+
+
+            #region PermissionChecker
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionChecker.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+
+using " + ApplicationNameSpace + @".Interfaces;
+using " + DomainNameSpace + @".Common;
+using Microsoft.AspNetCore.Http;
+
+namespace " + DataAccessNameSpace + @".Identity
+{
+   
+   public class PermissionChecker : IPermissionChecker
+    {
+        private readonly IHttpContextAccessor _context;
+        public PermissionChecker(IHttpContextAccessor context)
+        {
+            _context = context;
+        }
+        #region From Token
+
+        public bool HasClaim(string requiredClaim)
+        {
+            if (_context.HttpContext.User == null)
+            {
+                return false;
+            }
+
+            // If user does not have the scope claim, get out of here
+            if (_context.HttpContext.User.HasClaim(c => c.Type == CustomClaimTypes.Permission &&
+                                                        c.Value.ToUpper() == requiredClaim.ToUpper()))
+            {
+
+                return true;
+            }
+
+            return false;
+        }
+        #endregion
+    }
+}
+
+");
+
+            }
+
+            #endregion
+
+
+            #region PermissionPolicyProvider
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionPolicyProvider.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
+
+namespace " + DataAccessNameSpace + @".Identity
+{
+   
+    public class PermissionPolicyProvider : IAuthorizationPolicyProvider
+    {
+        public DefaultAuthorizationPolicyProvider FallbackPolicyProvider { get; }
+
+        public PermissionPolicyProvider(IOptions<AuthorizationOptions> options)
+        {
+            // There can only be one policy provider in ASP.NET Core.
+            // We only handle permissions related policies, for the rest
+            /// we will use the default provider.
+            FallbackPolicyProvider = new DefaultAuthorizationPolicyProvider(options);
+        }
+
+        public Task<AuthorizationPolicy> GetDefaultPolicyAsync() => FallbackPolicyProvider.GetDefaultPolicyAsync();
+        public Task<AuthorizationPolicy> GetFallbackPolicyAsync() => FallbackPolicyProvider.GetFallbackPolicyAsync();
+        //{
+            //return FallbackPolicyProvider.GetDefaultPolicyAsync();
+       // }
+
+        // Dynamically creates a policy with a requirement that contains the permission.
+        // The policy name must match the permission that is needed.
+        public Task<AuthorizationPolicy> GetPolicyAsync(string policyName)
+        {
+            //if (policyName.StartsWith(""Permissions"", StringComparison.OrdinalIgnoreCase))
+                //{
+                var policy = new AuthorizationPolicyBuilder();
+                policy.AddRequirements(new PermissionRequirement(policyName));
+                return Task.FromResult(policy.Build());
+                //  }
+
+                // Policy is not for permissions, try the default provider.
+                return FallbackPolicyProvider.GetPolicyAsync(policyName);
+            }
+        }
+    }
+
+");
+
+            }
+
+            #endregion
+
+
+            #region PermissionRequirement
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionRequirement.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using Microsoft.AspNetCore.Authorization;
+
+namespace " + DataAccessNameSpace + @".Identity
+{
+   
+   public class PermissionRequirement : IAuthorizationRequirement
+    {
+        public string Permission { get; private set; }
+
+        public PermissionRequirement(string permission)
+        {
+            Permission = permission;
+        }
+    }
+}
+
+");
+
+            }
+
+            #endregion
+
+            #endregion
+
+
+
+            //            #region UnitOfWork
+
+            //            using (
+            //                StreamWriter streamWriter =
+            //                    new StreamWriter(Path.Combine(InfraDataFolderPath, "UnitOfWork.cs")))
+            //            {
+            //                // Create the header for the class
+            //                streamWriter.WriteLine(@"
+            //using System;
+            //using System.Collections.Generic;
+            //using System.Linq;
+            //using System.Threading.Tasks;
+            //using " + DataAccessNameSpace + @".Interfaces.Data;
+            //using " + DataAccessNameSpace + @".Interfaces.Repositories;
+            //using " + DataAccessNameSpace + @".Repositories;
+            //using Microsoft.EntityFrameworkCore;
+            //using Microsoft.EntityFrameworkCore.Storage;
+
+            //namespace " + DataAccessNameSpace + @".Data {
+            //  /// <summary>
+            //    /// Represents the default implementation of the <see cref='IUnitOfWork'/> and <see cref='IUnitOfWork{TContext}'/> interface.
+            //    /// </summary>
+            //    /// <typeparam name='TContext'>The type of the db context.</typeparam>
+            //    public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork where TContext : DbContext
+            //    {
+            //        private bool _disposed = false;
+            //        private Dictionary<Type, object> _repositories;
+            //        private readonly TContext _context;
+
+            //        /// <summary>
+            //        /// Gets the db context.
+            //        /// </summary>
+            //        /// <returns>The instance of type <typeparamref name='TContext'/>.</returns>
+            //        public TContext DbContext
+            //        {
+            //            get { return _context; }
+            //        }
+
+
+
+
+            //        /// <summary>
+            //        /// Initializes a new instance of the <see cref='UnitOfWork{TContext}'/> class.
+            //        /// </summary>
+            //        /// <param name='context'>The context.</param>
+            //        public UnitOfWork(TContext context)
+            //        {
+            //            _context = context ?? throw new ArgumentNullException(nameof(context));
+            //        }
+
+
+
+
+            //         #region SQL
+            //        /// <summary>
+            //        /// Uses raw SQL queries to fetch the specified <typeparamref name='TEntity' /> data.
+            //        /// </summary>
+            //        /// <typeparam name='TEntity'>The type of the entity.</typeparam>
+            //        /// <param name='sql'>The raw SQL.</param>
+            //        /// <param name='parameters'>The parameters.</param>
+            //        /// <returns>An <see cref='IQueryable{T}' /> that contains elements that satisfy the condition specified by raw SQL.</returns>
+            //        public IQueryable<TEntity> FromSqlRaw<TEntity>(string sql, params object[] parameters) where TEntity : class
+            //        {
+            //            return _context.Set<TEntity>().FromSqlRaw(sql, parameters);
+            //        }
+
+            //        /// <summary>
+            //        /// Executes the specified raw SQL command.
+            //        /// </summary>
+            //        /// <param name='sql'>The raw SQL.</param>
+            //        /// <param name='parameters'>The parameters.</param>
+            //        /// <returns>The number of state entities written to database.</returns>
+            //        public int ExecuteSqlCommand(string sql, params object[] parameters)
+            //        {
+            //            return _context.Database.ExecuteSqlCommand(sql, parameters);
+            //        }
+
+            //        #endregion
+
+            //        #region GET
+
+
+
+            //        ///// <summary>
+            //        ///// Gets the specified repository for the <typeparamref name='TEntity'/>.
+            //        ///// </summary>
+            //        ///// <typeparam name='TEntity'>The type of the entity.</typeparam>
+            //        ///// <returns>An instance of type inherited from <see cref='IRepository{TEntity}'/> interface.</returns>
+            //        //public IRepository<TEntity> GetGenericRepository<TEntity>() where TEntity : class
+            //        //{
+            //        //    if (_repositories == null)
+            //        //        _repositories = new Dictionary<Type, object>();
+
+            //        //    var type = typeof(TEntity);
+            //        //    if (!_repositories.ContainsKey(type))
+            //        //        _repositories[type] = new Repository<TEntity>(_context);
+
+            //        //    return (IRepository<TEntity>)_repositories[type];
+            //        //}
+
+
+            //        public  TEntity GetRepository<TEntity>() where TEntity : class
+            //        {
+
+            //            var interfaceType = typeof(TEntity);
+
+
+            //            if (_repositories == null)
+            //            {
+            //                _repositories = new Dictionary<Type, object>();
+
+
+            //            }
+            //            var type = AppDomain.CurrentDomain.GetAssemblies()
+            //                .SelectMany(s => s.GetTypes())
+            //                .Where(x => x.GetInterface(interfaceType.Name) != null).FirstOrDefault();
+
+            //            if (type != null)
+            //            {
+            //                if (!_repositories.ContainsKey(interfaceType))
+            //                {
+            //                    _repositories[interfaceType] = Activator.CreateInstance(type, _context);
+            //                }
+
+            //                return (TEntity) _repositories[interfaceType];
+
+            //            }
+
+
+            //            return null;
+            //        }
+
+
+            //        #endregion
+
+            //        #region SAVE
+            //        /// <inheritdoc />
+            //        /// <summary>
+            //        /// Saves all changes made in this context to the database.
+            //        /// </summary>
+            //        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
+            //        /// <returns>The number of state entries written to the database.</returns>
+            //        public int SaveChanges()
+            //        {
+
+            //            return _context.SaveChanges();
+
+
+            //        }
+
+            //        /// <summary>
+            //        /// Asynchronously saves all changes made in this unit of work to the database.
+            //        /// </summary>
+            //        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
+            //        /// <returns>A <see cref='Task{TResult}'/> that represents the asynchronous save operation. The task result contains the number of state entities written to database.</returns>
+            //        public async Task<int> SaveChangesAsync()
+            //        {
+
+            //            return await _context.SaveChangesAsync();
+
+
+            //        }
+
+            //        #endregion
+
+            //        #region Dispose
+            //        /// <summary>
+            //        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            //        /// </summary>
+            //        public void Dispose()
+            //        {
+            //            Dispose(true);
+            //            GC.SuppressFinalize(this);
+            //        }
+
+            //        /// <summary>
+            //        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            //        /// </summary>
+            //        /// <param name='disposing'>The disposing.</param>
+            //        protected virtual void Dispose(bool disposing)
+            //        {
+            //            if (!_disposed && disposing)
+            //            {   // clear repositories
+            //                _repositories?.Clear();
+
+            //                // dispose the db context.
+            //                _context.Dispose();
+            //            }
+
+            //            _disposed = true;
+            //        }
+            //        #endregion
+            //    }
+            //}
+
+            //");
+
+
+
+
+            //            }
+
+
+            //            #endregion
 
 
             #region Infrastructure Dependency Injection
@@ -3476,15 +2876,27 @@ namespace " + DataAccessNameSpace + @".Data {
 
                 streamWriter.WriteLine(@"
 
+using "+ApplicationNameSpace+ @".Interfaces;
+using " + ApplicationNameSpace + @".Interfaces.Repositories;
+using "+DomainNameSpace+ @".Common;
+using " + DomainNameSpace + @".Entities;
+using " + DataAccessNameSpace+ @".Common;
+using " + DataAccessNameSpace + @".Data;
+using " + DataAccessNameSpace + @".Data.Repositories;
+using " + DataAccessNameSpace + @".Identity;
+using " + DataAccessNameSpace + @".Identity.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using " + DataAccessNameSpace + @".Data;
-using " + DataAccessNameSpace + @".Data.Initializer;
-using " + DataAccessNameSpace + @".Interfaces.Data;
-using " + DomainNameSpace + @".Entities;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
+using System;
+using System.Text;
 
 namespace " + DataAccessNameSpace + @"
 {
@@ -3495,9 +2907,14 @@ namespace " + DataAccessNameSpace + @"
                 new Microsoft.Extensions.Logging.Debug.DebugLoggerProvider()
             });
 
-        public static IServiceCollection AddDataBaseAccess(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
            
+          services.AddScoped<DbContext, ApplicationDbContext>();
+
+            services.Configure<JwtSettings>(configuration.GetSection(""JwtSettings""));
+
+
             services.AddDbContext<ApplicationDbContext>(options =>
 
                 options.UseLoggerFactory(_myLoggerFactory).UseSqlServer(
@@ -3505,19 +2922,107 @@ namespace " + DataAccessNameSpace + @"
                 serverOptions =>
                 {
                     serverOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
-                }));
+                }), ServiceLifetime.Scoped);
 
 
 
-                services.AddIdentity<ApplicationUser, IdentityRole<int>>()
+                services.AddIdentity<ApplicationUser, IdentityRole<Guid>>()
                     .AddEntityFrameworkStores<ApplicationDbContext>()
                     .AddDefaultTokenProviders();
 
 
-                //services.AddScoped<IRepositoryFactory, UnitOfWork<ApplicationDbContext>>();
-                services.AddScoped<IUnitOfWork, UnitOfWork<ApplicationDbContext>>();
+                services.AddTransient<UserManager<ApplicationUser>>();
+                services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-                services.AddScoped<IDbInitializer, DbInitializer>();
+                services.AddScoped<IBookCategoryRepositoryAsync, BookCategoryRepositoryAsync>();
+
+                services.AddTransient<IAuthService, AuthService>();
+                services.AddTransient<IDateTimeService, DateTimeService>();
+
+
+
+                services.Configure<IdentityOptions>(opt =>
+                {
+                    opt.Password.RequiredLength = 5;
+                    opt.Password.RequireLowercase = true;
+                    opt.Password.RequireNonAlphanumeric = true;
+                    opt.Password.RequiredUniqueChars = 1;
+                    opt.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(30);
+                    opt.Lockout.MaxFailedAccessAttempts = 3;
+                    opt.User.RequireUniqueEmail = true;
+                    opt.SignIn.RequireConfirmedAccount = true;
+                    opt.SignIn.RequireConfirmedEmail = true;
+                    opt.SignIn.RequireConfirmedPhoneNumber = false;
+
+                });
+
+
+                services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+                services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+                services.AddScoped<IPermissionChecker, PermissionChecker>();
+
+
+                services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                   .AddJwtBearer(o =>
+                   {
+                       o.RequireHttpsMetadata = false;
+                       o.SaveToken = false;
+                       o.TokenValidationParameters = new TokenValidationParameters
+                       {
+                           ValidateIssuerSigningKey = true,
+                           ValidateIssuer = true,
+                           ValidateAudience = true,
+                           ValidateLifetime = true,
+                           ClockSkew = TimeSpan.Zero,
+                           ValidIssuer = configuration[""JwtSettings:Issuer""],
+                           ValidAudience = configuration[""JwtSettings:Audience""],
+                           IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration[""JwtSettings:Key""]))
+                       };
+
+                       o.Events = new JwtBearerEvents()
+                       {
+                           OnAuthenticationFailed = c =>
+                           {
+                               c.NoResult();
+                               c.Response.StatusCode = 500;
+                               c.Response.ContentType = ""text/plain"";
+                               return c.Response.WriteAsync(c.Exception.ToString());
+                           },
+                           OnChallenge = context =>
+                           {
+                               context.HandleResponse();
+                               context.Response.StatusCode = 401;
+                               context.Response.ContentType = ""application/json"";
+                           // Ensure we always have an error and error description.
+                           if (string.IsNullOrEmpty(context.Error))
+                                   context.Error = ""invalid_token"";
+                               if (string.IsNullOrEmpty(context.ErrorDescription))
+                                   context.ErrorDescription = ""This request requires a valid JWT access token to be provided"";
+
+
+                               var result = JsonConvert.SerializeObject(""401 Not authorized"");
+                               return context.Response.WriteAsync(result);
+                           },
+                           OnForbidden = context =>
+                           {
+                               context.Response.StatusCode = 403;
+                               context.Response.ContentType = ""application/json"";
+                               var result = JsonConvert.SerializeObject(""403 Not authorized"");
+                               return context.Response.WriteAsync(result);
+                           },
+                       };
+                   });
+
+                   services.AddScoped<IDbInitializer, DbInitializer>();
+
+
+
+
 
                 return services;
             }
