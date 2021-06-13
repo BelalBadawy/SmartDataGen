@@ -3045,6 +3045,36 @@ namespace " + DataAccessNameSpace + @"
             }
             #endregion
 
+
+
+            #region EF Code
+
+
+
+            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(DataPath, "efCode.txt")))
+            {
+                // Create the header for the class
+
+                streamWriter.WriteLine(@"
+dotnet tool update --global dotnet-ef
+
+dotnet ef database drop --project ""BS.Infrastructure"" --startup-project ""BS.API""
+                dotnet ef database update
+                dotnet ef migrations add InitialMigration--project ""BS.Infrastructure""--startup - project ""BS.API""
+                dotnet ef database update--project ""BS.Infrastructure"" --startup - project ""BS.API"" --verbose
+
+");
+
+
+
+
+
+
+
+
+
+            }
+            #endregion
         }
         private static void CreateApplicationClasses()
         {
