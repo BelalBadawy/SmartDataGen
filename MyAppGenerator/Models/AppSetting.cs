@@ -25,5 +25,8 @@ namespace MyAppGenerator.Models
         public int KeyType { get; set; }
         public bool AddDapperToDBContext { get; set; }
 
+        public string APICustomPath { get; set; }
+
+
     }
 }

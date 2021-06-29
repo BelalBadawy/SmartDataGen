@@ -67,12 +67,24 @@ namespace MyAppGenerator.CsGenerators
 
         #endregion
 
+
+        #region API Folders
+
+        public static string ApiPath { get; set; }
+        public static string ApiControllersPath { get; set; }
+        public static string ApiFiltersPath { get; set; }
+        public static string ApiInfrastructurePath { get; set; }
+        public static string ApiMiddlewarePath { get; set; }
+
+        #endregion
+
         public static List<NodeType> tables { get; set; }
         public static bool useResourceFile { get; set; }
 
         public static string DomainNameSpace = ProjectName + ".Domain";
         public static string DataAccessNameSpace = ProjectName + ".Infrastructure";
         public static string ApplicationNameSpace = ProjectName + ".Application";
+        public static string ApiNameSpace = ProjectName + ".API";
 
         #endregion
 
@@ -82,6 +94,7 @@ namespace MyAppGenerator.CsGenerators
             DomainNameSpace = appSetting.ProjectName + ".Domain";
             DataAccessNameSpace = appSetting.ProjectName + ".Infrastructure";
             ApplicationNameSpace = appSetting.ProjectName + ".Application";
+            ApiNameSpace = appSetting.ProjectName + ".API";
 
 
             CreateFoldersForCleanArchitectureRepository(appSetting.OutputDirectory);
@@ -89,6 +102,7 @@ namespace MyAppGenerator.CsGenerators
             CreateDomainClasses();
             CreateInfrastructureClasses();
             CreateApplicationClasses();
+            CreateAPIClasses();
             CreateResourceFile();
         }
 
@@ -240,6 +254,26 @@ namespace MyAppGenerator.CsGenerators
 
             ApplicationValidationsPath = Path.Combine(ApplicationPath, "Validations");
             UtilityHelper.CreateSubDirectory(ApplicationValidationsPath, true);
+            #endregion
+
+
+            #region API Folders
+
+            ApiPath = Path.Combine(outputDirectory, "API");
+            UtilityHelper.CreateSubDirectory(ApiPath, true);
+
+            ApiControllersPath = Path.Combine(ApiPath, "Controllers");
+            UtilityHelper.CreateSubDirectory(ApiControllersPath, true);
+
+            ApiFiltersPath = Path.Combine(ApiPath, "Filters");
+            UtilityHelper.CreateSubDirectory(ApiFiltersPath, true);
+
+            ApiInfrastructurePath = Path.Combine(ApiPath, "Infrastructure");
+            UtilityHelper.CreateSubDirectory(ApiInfrastructurePath, true);
+
+            ApiMiddlewarePath = Path.Combine(ApiPath, "Middleware");
+            UtilityHelper.CreateSubDirectory(ApiMiddlewarePath, true);
+
             #endregion
 
         }
@@ -3178,15 +3212,15 @@ namespace " + ApplicationNameSpace + @".Exceptions
 {
     public class ValidationException : ApplicationException
     {
-        public List<string> ValdationErrors { get; set; }
+        public List<string> ValidationErrors { get; set; }
 
         public ValidationException(ValidationResult validationResult)
         {
-            ValdationErrors = new List<string>();
+            ValidationErrors = new List<string>();
 
             foreach (var validationError in validationResult.Errors)
             {
-                ValdationErrors.Add(validationError.ErrorMessage);
+                ValidationErrors.Add(validationError.ErrorMessage);
             }
         }
     }
@@ -3970,6 +4004,736 @@ namespace " + ApplicationNameSpace + @"
 
 
 
+
+        }
+
+        private static void CreateAPIClasses()
+        {
+
+            #region Common Classes
+
+            #region Exception Handler Middleware Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApiMiddlewarePath, "ExceptionHandlerMiddleware.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                          using System;
+using System.Net;
+using System.Threading.Tasks;
+using BS.Application.Exceptions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+
+namespace " + ApiNameSpace + @".Middleware
+{
+    public class ExceptionHandlerMiddleware
+        {
+            private readonly RequestDelegate _next;
+            private readonly ILogger<ExceptionHandlerMiddleware> _logger;
+
+            public ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionHandlerMiddleware> logger)
+            {
+                _next = next;
+                _logger = logger;
+            }
+
+            public async Task Invoke(HttpContext context)
+            {
+                try
+                {
+                    await _next(context);
+                }
+                catch (Exception ex)
+                {
+                    await ConvertException(context, ex);
+                }
+            }
+
+            private Task ConvertException(HttpContext context, Exception exception)
+            {
+                HttpStatusCode httpStatusCode = HttpStatusCode.InternalServerError;
+
+                context.Response.ContentType = ""application/json"";
+
+                var result = string.Empty;
+
+                switch (exception)
+                {
+                    case ValidationException validationException:
+                        httpStatusCode = HttpStatusCode.BadRequest;
+                        result = JsonConvert.SerializeObject(validationException.ValidationErrors);
+                        break;
+                    case BadRequestException badRequestException:
+                        httpStatusCode = HttpStatusCode.BadRequest;
+                        result = badRequestException.Message;
+                        break;
+                    case NotFoundException notFoundException:
+                        httpStatusCode = HttpStatusCode.NotFound;
+                        break;
+                    case Exception ex:
+                        httpStatusCode = HttpStatusCode.BadRequest;
+                        break;
+                }
+
+                context.Response.StatusCode = (int)httpStatusCode;
+
+                if (result == string.Empty)
+                {
+                    result = JsonConvert.SerializeObject(new { error = exception.Message });
+                    _logger.LogError(result);
+                }
+
+                return context.Response.WriteAsync(result);
+            }
+        }
+    }
+
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #region MiddlewareExtensions Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApiMiddlewarePath, "MiddlewareExtensions.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using Microsoft.AspNetCore.Builder;
+
+namespace " + ApiNameSpace + @".Middleware
+{
+    public static class MiddlewareExtensions
+    {
+        public static IApplicationBuilder UseCustomExceptionHandler(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<ExceptionHandlerMiddleware>();
+        }
+    }
+}
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #region BaseApiController Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApiInfrastructurePath, "BaseApiController.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace " + ApiNameSpace + @".Infrastructure
+{
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [Route(""api/v{version:apiVersion}/[controller]/[action]"")]
+    [ApiController]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public class BaseApiController : ControllerBase
+    {
+        public BaseApiController()
+        {
+
+        }
+    }
+}
+
+");
+
+
+            }
+
+
+            #endregion
+
+            #region Filters Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApiFiltersPath, "Filters.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                           using " + DomainNameSpace + @".Models;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using System;
+using System.Security.Claims;
+
+namespace " + ApiNameSpace + @".Filters
+{
+    public class UserActivitiesAttribute : IActionFilter
+    {
+        private readonly ILogger<UserActivitiesAttribute> _logger;
+
+        public UserActivitiesAttribute(ILogger<UserActivitiesAttribute> logger)
+        {
+            _logger = logger;
+        }
+        public void OnActionExecuted(ActionExecutedContext context)
+        {
+
+        }
+
+        public void OnActionExecuting(ActionExecutingContext context)
+        {
+            string areaName = string.IsNullOrEmpty(Convert.ToString(context.RouteData.Values[""area""])) ? """" : context.RouteData.Values[""area""].ToString().ToLower();
+            string controllerName = context.RouteData.Values[""controller""].ToString().ToLower();
+            string actionName = context.RouteData.Values[""action""].ToString().ToLower();
+
+            #region Log User Activity
+            try
+            {
+                LogUserActivity logActivity = new LogUserActivity();
+                logActivity.Id = Guid.NewGuid();
+                logActivity.CreatedDateTime = DateTime.UtcNow;
+                logActivity.IPAddress = context.HttpContext.Connection.RemoteIpAddress.ToString();
+                logActivity.Browser = context.HttpContext.Request.Headers[""User-Agent""].ToString();
+                logActivity.UrlData = string.Format(""{0}://{1}{2}{3}"", context.HttpContext.Request.Scheme, context.HttpContext.Request.Host, context.HttpContext.Request.Path, context.HttpContext.Request.QueryString);
+
+
+                if (context.HttpContext.User.Identity.IsAuthenticated)
+                {
+                    logActivity.UserId = Guid.Parse(context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+                }
+
+                logActivity.HttpMethod = context.HttpContext.Request.Method;
+
+                if (context.HttpContext.Request.Path != ""/"")
+                {
+                    logActivity.UserData +=
+                        JsonConvert.SerializeObject(
+                            new
+                            {
+                                context.HttpContext.Request.Path
+                            });
+                }
+                if (context.HttpContext.Request.QueryString.HasValue)
+                {
+                    logActivity.UserData +=
+                        JsonConvert.SerializeObject(
+                            new
+                            {
+                                context.HttpContext.Request.QueryString
+                            });
+                }
+                logActivity.UserData +=
+                    JsonConvert.SerializeObject(
+                        new
+                        {
+                            context.RouteData.Values
+                        });
+
+
+                if (context.HttpContext.Request.HasFormContentType)
+                {
+                    logActivity.UserData =
+                        JsonConvert.SerializeObject(
+                            new
+                            {
+                                context.HttpContext.Request.Form
+                            });
+                }
+
+
+                //var _logUserActivityServices = commonServices.ServiceProvider.GetRequiredService<ILogActivityService>();
+
+                // await  _logUserActivityServices.AddAsync(logActivity);
+                _logger.LogInformation(JsonConvert.SerializeObject(logActivity));
+                //FileHelper.WriteToFile(JsonConvert.SerializeObject(logActivity));
+
+            }
+            catch (Exception ex)
+            {
+            }
+
+            #endregion
+
+        }
+    }
+}
+
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #region Program Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApiPath, "Program.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using System;
+using System.Threading.Tasks;
+
+namespace " + ApiNameSpace + @"
+{
+    public class Program
+    {
+
+        public async static Task Main(string[] args)
+        {
+            var config = new ConfigurationBuilder()
+                .AddJsonFile(""appsettings.json"")
+                .Build();
+
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(config)
+               // .WriteTo.File(""Logs/log-.txt"", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+
+            var host = CreateHostBuilder(args).Build();
+
+            using (var scope = host.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+
+                try
+                {
+                   // var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+
+                   // await Identity.Seed.UserCreator.SeedAsync(userManager);
+                    Log.Information(""Application Starting"");
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, ""An error occured while starting the application"");
+                }
+            }
+
+            host.Run();
+        }
+
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .UseSerilog()
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseStartup<Startup>();
+                });
+    
+
+   
+}
+}
+
+");
+
+
+            }
+
+
+            #endregion
+
+
+            #region Startup Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApiPath, "Startup.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using " + ApiNameSpace + @".Filters;
+using " + ApiNameSpace + @".Middleware;
+using " + ApplicationNameSpace + @";
+using " + DataAccessNameSpace + @";
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
+
+namespace " + ApiNameSpace + @"
+{
+    public class Startup
+    {
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        public IConfiguration Configuration { get; }
+
+        // This method gets called by the runtime. Use this method to add services to the container.
+        public void ConfigureServices(IServiceCollection services)
+        {
+
+            services.AddApplication();
+            services.AddInfrastructure(Configuration);
+
+
+            services.AddHttpContextAccessor();
+
+            services.AddApiVersioning(options =>
+            {
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.DefaultApiVersion = new ApiVersion(1, 0);
+                options.ReportApiVersions = true;
+            });
+
+            services.AddVersionedApiExplorer(options => options.GroupNameFormat = ""'v'VVV"");
+
+            services.AddAntiforgery();
+            services.AddMemoryCache();
+            services.AddDistributedMemoryCache();
+
+            services.AddControllers(options =>
+            {
+                options.Filters.Add(typeof(UserActivitiesAttribute));
+            });
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(""Open"", builder => builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+            });
+
+            services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc(""v1"", new OpenApiInfo { Title = """ + ApiNameSpace + @""", Version = ""v1"" });
+
+                var securitySchema = new OpenApiSecurityScheme
+                {
+                    Description = ""JWT Authorization header using the Bearer scheme.Example: \""Authorization: Bearer { token}\"""",
+                    Name = ""Authorization"",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Scheme = ""bearer"",
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = ""Bearer""
+                    }
+                };
+
+            options.AddSecurityDefinition(""Bearer"", securitySchema);
+
+            var securityRequirement = new OpenApiSecurityRequirement
+                {
+                    { securitySchema, new[] { ""Bearer"" } }
+                };
+
+            options.AddSecurityRequirement(securityRequirement);
+
+
+        });
+        }
+
+    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint(""/swagger/v1/swagger.json"", """ + ApiNameSpace + @" v1""));
+        }
+
+
+
+        app.UseHttpsRedirection();
+        //    app.UseSession();
+        app.UseRouting();
+
+        app.UseAuthorization();
+
+        app.UseCustomExceptionHandler();
+
+        app.UseCors(""Open"");
+
+        app.UseAuthorization();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
+    }
+}
+}
+
+
+            ");
+
+
+            }
+
+
+            #endregion
+
+            #region AppSetting Class
+
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApiPath, "appsettings.json")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+{
+  ""ConnectionStrings"": {
+    ""DefaultConnection"": ""Server=(localdb)\\mssqllocaldb;Database=" + _appSetting.DataBase + @";Trusted_Connection=True;MultipleActiveResultSets=true""
+  },
+  ""Logging"": {
+    ""LogLevel"": {
+      ""Default"": ""Information"",
+      ""Microsoft"": ""Warning"",
+      ""Microsoft.Hosting.Lifetime"": ""Information""
+    }
+  },
+  ""Serilog"": {
+    ""MinimumLevel"": {
+      ""Default"": ""Information"",
+      ""Override"": {
+        ""Default"": ""Information"",
+        ""Microsoft"": ""Warning"",
+        ""Microsoft.Hosting.Lifetime"": ""Information""
+      }
+    },
+    ""WriteTo"": [
+      //{ ""Name"": ""Console"" },
+      {
+        ""Name"": ""File"",
+        ""Args"": {
+          ""path"": ""Logs/log-.txt"",
+          ""outputTemplate"": ""{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj}{NewLine}{Exception}"",
+          // ""outputTemplate"": ""{Timestamp:o} [{Level:u3}] ({SourceContext}) {Message}{NewLine}{Exception}"",
+          ""rollingInterval"": ""Day"",
+          ""retainedFileCountLimit"": 7
+        }
+      }
+    ],
+    ""Enrich"": [ ""FromLogContext"", ""WithMachineName"" ],
+    ""Properties"": {
+      ""Application"": ""AspNetCoreSerilogDemo""
+    }
+  },
+  ""AllowedHosts"": ""*"",
+
+  ""JwtSettings"": {
+    ""Key"": ""OQ6NPHeCv4rgLWGkSlaLf8soegJZhRrLY7OGaavJAhsdW5cN4PByKiq38W2Dn3DvYqggcTsDvGNXaLiVIw-U3hdNewXcCtEbe8f9ezgSnhpZIjAUaCUrCZswz6itxb-KEIAp-aJaF1AztCv1jG7mzn_S2YvbrLQvTE2f60i87VPUvByKkkz6yJO2ab_Vx_XSBT77BQN1hyVStPMGPcTP0IIDlGyz2XVYUygPcBnfK6cONPTptjPMbTubpxyHyUCZ6-1DpyI7gRhPXUM36IagcHsCsLmwkIQdkGgR6kpay5LAcBYGRxDjs-lXeFS2Vd9D_cv3Lzq3N4QTqHrOBnLwWg"",
+    ""Issuer"": ""https://localhost:44339"",
+    ""Audience"": ""https://localhost:44339"",
+    ""DurationInMinutes"": 60
+  }
+}
+
+");
+
+
+            }
+
+
+            #endregion
+
+
+
+
+            #endregion
+
+
+            foreach (Table table in tableList)
+            {
+                var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
+
+                string className = "";
+
+
+
+                #region  Model Classes
+                className = UtilityHelper.MakeSingular(table.Name);
+
+                string Camel_className = UtilityHelper.FormatCamel(className);
+
+                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApiControllersPath, className + "Controller.cs")))
+                {
+
+                    streamWriter.WriteLine(@"
+using " + ApiNameSpace + @".Infrastructure;
+using " + ApplicationNameSpace + @".Dtos;
+using " + ApplicationNameSpace + @".Services.Interfaces;
+using " + DomainNameSpace + @".Common;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;");
+
+
+                    streamWriter.WriteLine(@"
+namespace " + ApiNameSpace + @".Controllers
+{
+    [ApiVersion(""1.0"")]
+    public class " + className + @"Controller : BaseApiController
+    {
+        private readonly I" + className + @"Service _" + Camel_className + @"Service;
+        private readonly ILogger<" + className + @"Controller> _logger;
+
+        public " + className + @"Controller(I" + className + @"Service " + Camel_className + @"Service, ILogger<" + className + @"Controller> logger)
+        {
+            _" + Camel_className + @"Service = " + Camel_className + @"Service;
+            _logger = logger;
+            _logger.LogInformation($""Enter the {nameof(" + className + @"Controller)} controller"");
+
+        }
+
+        [Authorize(AppPermissions." + className + @".List)]
+        [HttpGet]
+        [ProducesResponseType(200, Type = typeof(List<" + className + @"ReadDto>))]
+        public async Task<ActionResult> GetAll()
+        {
+            return Ok(await _" + Camel_className + @"Service.GetAllAsync());
+        }
+        
+        [HttpGet]
+        [ProducesResponseType(200, Type = typeof(PagedResult<" + className + @"ReadDto>))]
+        public async Task<ActionResult> GetAllPagedList(int pageIndex, int pageSize)
+        {
+            return Ok(await _" + Camel_className + @"Service.GetPagedListAsync(null, (o => o.OrderBy(x => x.DisplayOrder)), pageIndex, pageSize));
+        }
+        
+        [HttpGet(""{id:Guid}"", Name = ""GetById"")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(" + className + @"ReadDto))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesDefaultResponseType]
+        public async Task<ActionResult> GetById(Guid id)
+        {
+            var " + Camel_className + @" = await _" + Camel_className + @"Service.GetByIdAsync(id);
+
+            if (" + Camel_className + @" == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(" + Camel_className + @");
+        }
+
+
+        [HttpPost]
+        [ProducesResponseType(201, Type = typeof(" + className + @"UpsertDto))]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Create(" + className + @"UpsertDto " + Camel_className + @"UpsertDto)
+        {
+
+            if (" + Camel_className + @"UpsertDto == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            Response<Guid> response = await _" + Camel_className + @"Service.AddAsync(" + Camel_className + @"UpsertDto);
+
+            if (response != null)
+            {
+                if (response.Succeeded)
+                {
+                    return CreatedAtRoute(""GetById"", new { id = response.Data }, response.Data);
+                }
+                else
+                {
+                    return BadRequest(response);
+                }
+            }
+            else
+            {
+                response = new Response<Guid>(SD.ErrorOccurred);
+                return BadRequest(response);
+            }
+        }
+
+        [HttpPut]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Update(" + className + @"UpsertDto " + Camel_className + @"UpsertDto)
+        {
+
+            if (" + Camel_className + @"UpsertDto == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            Response<bool> response = await _" + Camel_className + @"Service.UpdateAsync(" + Camel_className + @"UpsertDto);
+
+            if (response != null)
+            {
+                if (response.Succeeded)
+                {
+                    return NoContent();
+                }
+                else
+                {
+                    return BadRequest(response);
+                }
+            }
+            else
+            {
+                response = new Response<bool>(SD.ErrorOccurred);
+                return BadRequest(response);
+            }
+        }
+
+        [HttpDelete(""{id}"")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+
+            if (id == Guid.Empty)
+            {
+                return BadRequest(""id is required."");
+            }
+
+            Response<bool> response = await _" + Camel_className + @"Service.DeleteAsync(id);
+
+            if (response != null)
+            {
+                if (response.Succeeded)
+                {
+                    return NoContent();
+                }
+                else
+                {
+                    return BadRequest(response);
+                }
+            }
+            else
+            {
+                response = new Response<bool>(SD.ErrorOccurred);
+                return BadRequest(response);
+            }
+        }
+    }
+}
+
+");
+
+                }
+                #endregion
+
+
+            }
 
         }
         private static void CreateResourceFile()

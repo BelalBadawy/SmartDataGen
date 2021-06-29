@@ -31,7 +31,7 @@ namespace MyAppGenerator
 
 
 
-      
+
 
         private async void btnGenerator_Click(object sender, EventArgs e)
         {
@@ -68,6 +68,8 @@ namespace MyAppGenerator
                 appSetting.Architecture = ddlArchitecture.SelectedIndex;
                 appSetting.WithResourcesFile = chkWithResourcesFile.Checked;
                 appSetting.WithTranslations = chkWithTranslations.Checked;
+                appSetting.APICustomPath = txtAPICustomPath.Text.Trim();
+
 
                 List<string> culutresList = null;
 
