@@ -706,6 +706,53 @@ namespace " + DomainNameSpace + @".Common
 
             #endregion
 
+
+
+            #region Permissions Class
+
+
+
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainCommonPath, "AppPermissions.cs")))
+            {
+
+                streamWriter.WriteLine(@"
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+
+namespace " + DomainNameSpace + @".Common
+{
+    public static class AppPermissions 
+    {
+      ");
+                string className = "";
+
+                foreach (Table table in tableList)
+                {
+                    className = UtilityHelper.MakeSingular(table.Name);
+
+                    streamWriter.WriteLine("public static class " + className);
+                    streamWriter.WriteLine("{");
+                    streamWriter.WriteLine("public const string List = \"Permissions." + className + ".List\";");
+                    streamWriter.WriteLine("public const string View = \"Permissions." + className + ".View\";");
+                    streamWriter.WriteLine("public const string Create = \"Permissions." + className + ".Create\";");
+                    streamWriter.WriteLine("public const string Edit = \"Permissions." + className + ".Edit\";");
+                    streamWriter.WriteLine("public const string Delete = \"Permissions." + className + ".Delete\";");
+                    streamWriter.WriteLine("}");
+
+                }
+
+                streamWriter.WriteLine(@" 
+
+        }
+}
+                                        ");
+
+
+            }
+
+            #endregion
             #endregion
 
 
