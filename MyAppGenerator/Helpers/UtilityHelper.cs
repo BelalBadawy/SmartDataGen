@@ -79,7 +79,7 @@ namespace MyAppGenerator.Helpers
 
         public static string CreateMethodParameter(Column column)
         {
-            return GetCsType(column) + " " + FormatCamel(column.Name); ;
+            return GetCsType(column)  + " " + FormatCamel(column.Name); ;
 
         }
 
@@ -705,7 +705,7 @@ namespace MyAppGenerator.Helpers
             switch (column.Type.ToLower())
             {
                 case "binary":
-                    return "byte[]";
+                    return column.IsNullable ? "byte?[]" : "byte[]";
                 case "bigint":
 
                     return column.IsNullable ? "long?" : "long";
@@ -722,11 +722,11 @@ namespace MyAppGenerator.Helpers
                 case "decimal":
                     return column.IsNullable ? "decimal?" : "decimal";
                 case "filestream":
-                    return "byte[]";
+                    return column.IsNullable ? "byte?[]" : "byte[]";
                 case "float":
                     return column.IsNullable ? "double?" : "double";
                 case "image":
-                    return "byte[]";
+                    return column.IsNullable ? "byte?[]" : "byte[]";
                 case "int":
                     return column.IsNullable ? "int?" : "int";
                 case "money":
@@ -749,7 +749,8 @@ namespace MyAppGenerator.Helpers
 
                 case "sql_variant":
                 case "rowversion":
-                    return "byte[]";
+                    return column.IsNullable ? "byte?[]" : "byte[]";
+
                 case "sysname":
                     return "string";
                 case "text":
@@ -759,11 +760,12 @@ namespace MyAppGenerator.Helpers
                 case "tinyint":
                     return column.IsNullable ? "byte?" : "byte";
                 case "varbinary":
-                    return "byte[]";
+                    return column.IsNullable ? "byte?[]" : "byte[]";
+
                 case "varchar":
                     return "string";
                 case "uniqueidentifier":
-                    return "Guid";
+                    return column.IsNullable ? "Guid?" : "Guid";
                 case "xml":
                     return "string";
                 default:  // Unknow data type

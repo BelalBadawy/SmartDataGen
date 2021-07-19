@@ -293,6 +293,8 @@ namespace MyAppGenerator.CsGenerators
                 // Create the header for the class
                 streamWriter.WriteLine(@"
                                             using System;
+                                            using System.ComponentModel.DataAnnotations;
+                                            using System.ComponentModel.DataAnnotations.Schema;
 
                                             namespace " + DomainNameSpace + @".Common
                                             {
@@ -654,7 +656,7 @@ namespace " + DomainNameSpace + @".Common
 {
   public class KeyValue
     {
-        public " + UtilityHelper.GetIDKeyType(_appSetting) + @" Id { get; set; })
+        public " + UtilityHelper.GetIDKeyType(_appSetting) + @" Id { get; set; }
         public string Value { get; set; }
     }
 }
@@ -688,7 +690,7 @@ namespace " + DomainNameSpace + @".Common
         #region Messages
         public const string SavedSuccessfully = ""Saved Successfully"";
         public const string ExistData = ""This [{0}] already exist."";
-        public const string ErrorOccured = ""An error has been occured."";
+        public const string ErrorOccurred = ""An error has been occured."";
         public const string NotExistData = ""This record does not exist."";
         public const string CanNotDeleteData = ""Sorry we can't delete this record"";
         public const string AllowedForUpload = ""Only {0} are allowed to be uploaded."";
@@ -802,7 +804,7 @@ namespace " + DomainNameSpace + @".Common
                                             {
                                                public interface IBaseEntity
                                                 {
-                                                    public " + UtilityHelper.GetIDKeyType(_appSetting) + @" Id { get; set; })
+                                                    public " + UtilityHelper.GetIDKeyType(_appSetting) + @" Id { get; set; }
                                                 }
                                             }
                                         ");
@@ -1020,6 +1022,7 @@ namespace " + DomainNameSpace + @".Enums
             {
                 // Create the header for the class
                 streamWriter.WriteLine(@"
+                                        using System;
                                         using Microsoft.AspNetCore.Identity;
                                         using System.ComponentModel.DataAnnotations;
 
@@ -1061,6 +1064,7 @@ namespace " + DomainNameSpace + @".Enums
                     streamWriter.WriteLine("using System;");
                     streamWriter.WriteLine("using System.Collections.Generic;");
                     streamWriter.WriteLine("using System.ComponentModel.DataAnnotations;");
+                    streamWriter.WriteLine("using " + DomainNameSpace + ".Interfaces;");
 
                     streamWriter.WriteLine();
                     streamWriter.WriteLine("namespace " + DomainNameSpace + ".Entities");
@@ -1974,7 +1978,8 @@ namespace " + DataAccessNameSpace + @".Data
         }
 
 
-    }");
+    }
+}");
 
 
 
@@ -3638,7 +3643,7 @@ namespace " + ApplicationNameSpace + @".Interfaces
                     streamWriter.WriteLine("CreateMap<" + className + ", " + className + "UpsertDto>().ReverseMap();");
                     streamWriter.WriteLine("CreateMap<" + className + "ReadDto, " + className +
                                            "UpsertDto>().ReverseMap();");
-                    streamWriter.WriteLine("CreateMap<" + className + ", " + className + "UpdateDto>().ReverseMap();");
+                    //  streamWriter.WriteLine("CreateMap<" + className + ", " + className + "UpsertDto>().ReverseMap();");
                     streamWriter.WriteLine("\t}");
                     streamWriter.WriteLine("}");
                     streamWriter.WriteLine("}");
@@ -4002,7 +4007,7 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
 
                 streamWriter.WriteLine(@"
 
-using " + ApplicationNameSpace + @".Implementations;
+using " + ApplicationNameSpace + @".Services.Implementations;
 using " + ApplicationNameSpace + @".Services.Interfaces;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -4068,7 +4073,7 @@ namespace " + ApplicationNameSpace + @"
                                           using System;
 using System.Net;
 using System.Threading.Tasks;
-using BS.Application.Exceptions;
+using " + ApplicationNameSpace + @".Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
