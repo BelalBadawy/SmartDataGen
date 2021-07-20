@@ -1064,6 +1064,7 @@ namespace " + DomainNameSpace + @".Enums
                     streamWriter.WriteLine("using System;");
                     streamWriter.WriteLine("using System.Collections.Generic;");
                     streamWriter.WriteLine("using System.ComponentModel.DataAnnotations;");
+                    streamWriter.WriteLine("using System.ComponentModel.DataAnnotations.Schema;");
                     streamWriter.WriteLine("using " + DomainNameSpace + ".Interfaces;");
 
                     streamWriter.WriteLine();
@@ -1264,6 +1265,7 @@ namespace " + DomainNameSpace + @".Enums
                                                                " { get; set; }");
                                         streamWriter.WriteLine();
                                     }
+
                                 }
                             }
                         }
@@ -1279,21 +1281,35 @@ namespace " + DomainNameSpace + @".Enums
                         {
                             if (!string.IsNullOrEmpty(foreignKeysList[j].PrimaryKeyTableName))
                             {
-                                if (sameKey != foreignKeysList[j].PrimaryKeyTableName)
+                                if (foreignKeysList[j].PrimaryKeyTableName == foreignKeysList[j].ForeignKeyTableName)
                                 {
-                                    sameKey = foreignKeysList[j].PrimaryKeyTableName;
-                                    //  public virtual Course Course { get; set; }
-                                    // streamWriter.WriteLine("\t\t[BindNever]");
+                                    // Self-referencing entity with one to many relationship generates
+                                    streamWriter.WriteLine("[ForeignKey(\"" +
+                                                           foreignKeysList[j].ForeignKeyColumnName + "\")]");
                                     streamWriter.WriteLine("\t\tpublic virtual " +
-                                                           foreignKeysList[j].PrimaryKeyTableName + " " +
-                                                           foreignKeysList[j].PrimaryKeyTableName +
+                                                           UtilityHelper.MakeSingular(foreignKeysList[j]
+                                                               .PrimaryKeyTableName) + " Parent " +
                                                            " { get; set; }");
-                                }
-                            }
-                        }
+
+                    }
+
+                    if (sameKey != foreignKeysList[j].PrimaryKeyTableName)
+                    {
+                        sameKey = foreignKeysList[j].PrimaryKeyTableName;
+                        //  public virtual Course Course { get; set; }
+                        // streamWriter.WriteLine("\t\t[BindNever]");
+                        streamWriter.WriteLine("[ForeignKey(\"" +
+                                               foreignKeysList[j].ForeignKeyColumnName + "\")]");
+                        streamWriter.WriteLine("\t\tpublic virtual " +
+                                               foreignKeysList[j].PrimaryKeyTableName + " " +
+                                               foreignKeysList[j].PrimaryKeyTableName +
+                                               " { get; set; }");
                     }
 
 
+                }
+            }
+        }
 
 
 
@@ -1301,7 +1317,9 @@ namespace " + DomainNameSpace + @".Enums
 
 
 
-                    streamWriter.WriteLine();
+
+
+        streamWriter.WriteLine();
                     streamWriter.WriteLine("\t\t#endregion");
 
 
@@ -1312,24 +1330,24 @@ namespace " + DomainNameSpace + @".Enums
                     streamWriter.WriteLine("\t}");
                     streamWriter.WriteLine("}");
                 }
-                #endregion
+    #endregion
 
 
-            }
+}
 
         }
         private static void CreateInfrastructureClasses()
-        {
-            #region Common Classes
+{
+    #region Common Classes
 
-            #region  DateTimeService
+    #region  DateTimeService
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraCommonFolderPath, "DateTimeService.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraCommonFolderPath, "DateTimeService.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using " + ApplicationNameSpace + @".Interfaces;
 using System;
 
@@ -1343,29 +1361,29 @@ namespace " + DataAccessNameSpace + @".Common
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #endregion
+    #endregion
 
-            #region Data Classes
+    #region Data Classes
 
-            #region EntityConfiguration
+    #region EntityConfiguration
 
-            foreach (Table table in tableList)
-            {
-                var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
+    foreach (Table table in tableList)
+    {
+        var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
 
-                string className = "";
+        string className = "";
 
-                #region  Model Classes
-                className = UtilityHelper.MakeSingular(table.Name);
+        #region  Model Classes
+        className = UtilityHelper.MakeSingular(table.Name);
 
-                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraEntityConfigurationPath, className + "Configuration.cs")))
-                {
-                    // Create the header for the class
-                    streamWriter.WriteLine(@"
+        using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraEntityConfigurationPath, className + "Configuration.cs")))
+        {
+            // Create the header for the class
+            streamWriter.WriteLine(@"
 using " + DomainNameSpace + @".Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -1385,45 +1403,45 @@ namespace " + DataAccessNameSpace + @".Data.EntityConfiguration
 
                     ");
 
-                    streamWriter.WriteLine(UtilityHelper.CreateBuilderPropertyForEntityFrameworkHasKey(table.PrimaryKeys));
+            streamWriter.WriteLine(UtilityHelper.CreateBuilderPropertyForEntityFrameworkHasKey(table.PrimaryKeys));
 
-                    //                    if (table.PrimaryKeys.Count == 1)
-                    //                    {
-                    //                        Column column = table.Columns.FirstOrDefault(o => o.IsIdentity);
-                    //                        streamWriter.WriteLine("builder.HasKey(t => t." + column.Name + ");" +
-                    //                                               @"
-                    //// properties
-                    //                        builder.Property(t => t." + column.Name + @")
-                    //                            .HasColumnName(""" + column.Name + @""")
-                    //                            .HasColumnType(""" + column.Type + @""")
-                    //                            " + (column.IsNullable ? "" : ".IsRequired()") +
-                    //                             (column.IsIdentity ? ".ValueGeneratedOnAdd(); " : "; "));
-                    //                    }
-                    //                    else if (table.PrimaryKeys.Count > 1)
-                    //                    {
-                    //                        streamWriter.WriteLine("builder.HasKey(t => new { t.BookId, t.BookCategoryId });");
-                    //                    }
+            //                    if (table.PrimaryKeys.Count == 1)
+            //                    {
+            //                        Column column = table.Columns.FirstOrDefault(o => o.IsIdentity);
+            //                        streamWriter.WriteLine("builder.HasKey(t => t." + column.Name + ");" +
+            //                                               @"
+            //// properties
+            //                        builder.Property(t => t." + column.Name + @")
+            //                            .HasColumnName(""" + column.Name + @""")
+            //                            .HasColumnType(""" + column.Type + @""")
+            //                            " + (column.IsNullable ? "" : ".IsRequired()") +
+            //                             (column.IsIdentity ? ".ValueGeneratedOnAdd(); " : "; "));
+            //                    }
+            //                    else if (table.PrimaryKeys.Count > 1)
+            //                    {
+            //                        streamWriter.WriteLine("builder.HasKey(t => new { t.BookId, t.BookCategoryId });");
+            //                    }
 
-                    // Create the parameter list
-                    for (int i = 0; i < table.Columns.Count; i++)
-                    {
-                        Column column = table.Columns[i];
-                        var primaryKeys = table.PrimaryKeys.Select(o => o.Name).ToList();
+            // Create the parameter list
+            for (int i = 0; i < table.Columns.Count; i++)
+            {
+                Column column = table.Columns[i];
+                var primaryKeys = table.PrimaryKeys.Select(o => o.Name).ToList();
 
-                        if (!primaryKeys.Contains(column.Name))
-                        {
-                            // Ignore any identity columns
-                            streamWriter.WriteLine(UtilityHelper.CreateBuilderPropertyForEntityFramework(column));
-                        }
+                if (!primaryKeys.Contains(column.Name))
+                {
+                    // Ignore any identity columns
+                    streamWriter.WriteLine(UtilityHelper.CreateBuilderPropertyForEntityFramework(column));
+                }
 
-                    }
+            }
 
-                    string sameKey = "";
+            string sameKey = "";
 
 
 
-                    foreach (var f in table.ForeignKeys.Values)
-                    {
+            foreach (var f in table.ForeignKeys.Values)
+            {
                         //var foreignKeysList = f.Where(o => o.PrimaryKeyTableName == table.Name).ToList();
                         //for (int j = 0; j < foreignKeysList.Count; j++)
                         //{
@@ -1432,55 +1450,72 @@ namespace " + DataAccessNameSpace + @".Data.EntityConfiguration
                         //        if (sameKey != foreignKeysList[j].ForeignKeyTableName)
                         //        {
                         //            sameKey = foreignKeysList[j].ForeignKeyTableName;
-
-                        streamWriter.WriteLine("builder.HasOne(t => t." + UtilityHelper.MakeSingular(f[0].PrimaryKeyTableName) + ")");
-                        streamWriter.WriteLine(".WithMany(t => t." + UtilityHelper.MakePlural(f[0].ForeignKeyTableName) + ")");
-                        streamWriter.WriteLine(".HasForeignKey(d => d." + f[0].Name + ")");
-                        streamWriter.WriteLine(".HasConstraintName(" + @"""FK_" + f[0].ForeignKeyTableName + "_" + f[0].PrimaryKeyTableName + @""");");
+                        if (f[0].PrimaryKeyTableName == f[0].ForeignKeyTableName)
+                        {
+                            // Self-referencing entity with one to many relationship generates
+                           
+                          
+                            streamWriter.WriteLine("builder.HasOne(t => t.Parent)");
+                            streamWriter.WriteLine(".WithMany(t => t." +
+                                                   UtilityHelper.MakePlural(f[0].ForeignKeyTableName) + ")");
+                            streamWriter.WriteLine(".HasForeignKey(d => d." + f[0].Name + ")");
+                            streamWriter.WriteLine(".HasConstraintName(" + @"""FK_" + f[0].ForeignKeyTableName + "_" +
+                                                   f[0].PrimaryKeyTableName + @""");");
+                        }
+                        else
+                        {
+                            streamWriter.WriteLine("builder.HasOne(t => t." +
+                                                   UtilityHelper.MakeSingular(f[0].PrimaryKeyTableName) + ")");
+                            streamWriter.WriteLine(".WithMany(t => t." +
+                                                   UtilityHelper.MakePlural(f[0].ForeignKeyTableName) + ")");
+                            streamWriter.WriteLine(".HasForeignKey(d => d." + f[0].Name + ")");
+                            streamWriter.WriteLine(".HasConstraintName(" + @"""FK_" + f[0].ForeignKeyTableName + "_" +
+                                                   f[0].PrimaryKeyTableName + @""");");
+                        }
 
                         //streamWriter.WriteLine("\t\t this." +
-                        //                       foreignKeysList[j].ForeignKeyTableName + "List =  new List<" +
-                        //                       sameKey + ">(); ");
-                        //streamWriter.WriteLine();
-                        //}
-                        // }
-                        //}
-                    }
-
-                    streamWriter.WriteLine("}");
-                    streamWriter.WriteLine("}");
-                    streamWriter.WriteLine("}");
-
-
-
-
-
-
-
-
-
-
-
-
-
-                }
-                #endregion
-
-
+                //                       foreignKeysList[j].ForeignKeyTableName + "List =  new List<" +
+                //                       sameKey + ">(); ");
+                //streamWriter.WriteLine();
+                //}
+                // }
+                //}
             }
 
-            #endregion
+            streamWriter.WriteLine("}");
+            streamWriter.WriteLine("}");
+            streamWriter.WriteLine("}");
 
-            #region Initializer
 
-            #region IDbInitializer
 
-            using (
-                  StreamWriter streamWriter =
-                      new StreamWriter(Path.Combine(InfraDataInitializerPath, "IDbInitializer.cs")))
-            {
 
-                streamWriter.WriteLine(@"
+
+
+
+
+
+
+
+
+
+        }
+        #endregion
+
+
+    }
+
+    #endregion
+
+    #region Initializer
+
+    #region IDbInitializer
+
+    using (
+          StreamWriter streamWriter =
+              new StreamWriter(Path.Combine(InfraDataInitializerPath, "IDbInitializer.cs")))
+    {
+
+        streamWriter.WriteLine(@"
 namespace " + DataAccessNameSpace + @".Data.Initializer {
    public interface IDbInitializer
     {
@@ -1491,18 +1526,18 @@ namespace " + DataAccessNameSpace + @".Data.Initializer {
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region DbInitializer
+    #region DbInitializer
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraDataInitializerPath, "DbInitializer.cs")))
-            {
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraDataInitializerPath, "DbInitializer.cs")))
+    {
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
 using System;
 using " + DomainNameSpace + @".Entities;
 using Microsoft.AspNetCore.Identity;
@@ -1545,18 +1580,18 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region UserInitializer
+    #region UserInitializer
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraDataInitializerPath, "UserInitializer.cs")))
-            {
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraDataInitializerPath, "UserInitializer.cs")))
+    {
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
 using System;
 using " + DomainNameSpace + @".Entities;
 using Microsoft.AspNetCore.Identity;
@@ -1626,27 +1661,27 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #endregion
+    #endregion
 
-            #region Repositories
+    #region Repositories
 
-            foreach (Table table in tableList)
-            {
-                var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
+    foreach (Table table in tableList)
+    {
+        var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
 
-                string className = "";
+        string className = "";
 
-                #region  Model Classes
-                className = UtilityHelper.MakeSingular(table.Name);
+        #region  Model Classes
+        className = UtilityHelper.MakeSingular(table.Name);
 
-                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraRepositoriesPath, className + "RepositoryAsync.cs")))
-                {
-                    // Create the header for the class
-                    streamWriter.WriteLine(@"
+        using (StreamWriter streamWriter = new StreamWriter(Path.Combine(InfraRepositoriesPath, className + "RepositoryAsync.cs")))
+        {
+            // Create the header for the class
+            streamWriter.WriteLine(@"
 using " + DomainNameSpace + @".Entities;
 using " + ApplicationNameSpace + @".Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -1665,22 +1700,22 @@ namespace " + DataAccessNameSpace + @".Data.Repositories
 
 
 
-                }
-                #endregion
+        }
+        #endregion
 
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region ApplicationDbContext
+    #region ApplicationDbContext
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraDataFolderPath, "ApplicationDbContext.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraDataFolderPath, "ApplicationDbContext.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 
 using " + ApplicationNameSpace + @".Interfaces;
 using " + DomainNameSpace + @".Entities;
@@ -1720,27 +1755,27 @@ namespace " + DataAccessNameSpace + @".Data
 
 ");
 
-                foreach (Table table in tableList)
-                {
-                    streamWriter.WriteLine("public virtual DbSet<" + UtilityHelper.MakeSingular(table.Name) + "> " + UtilityHelper.MakePlural(table.Name) + " { get; set; }");
-                }
+        foreach (Table table in tableList)
+        {
+            streamWriter.WriteLine("public virtual DbSet<" + UtilityHelper.MakeSingular(table.Name) + "> " + UtilityHelper.MakePlural(table.Name) + " { get; set; }");
+        }
 
-                streamWriter.WriteLine(" protected override void OnModelCreating(ModelBuilder modelBuilder){");
+        streamWriter.WriteLine(" protected override void OnModelCreating(ModelBuilder modelBuilder){");
 
-                streamWriter.WriteLine("#region Entities Configuration");
+        streamWriter.WriteLine("#region Entities Configuration");
 
-                foreach (Table table in tableList)
-                {
-                    streamWriter.WriteLine(" // modelBuilder.ApplyConfiguration(new " + table.Name + "Configuration());");
-                }
+        foreach (Table table in tableList)
+        {
+            streamWriter.WriteLine(" // modelBuilder.ApplyConfiguration(new " + table.Name + "Configuration());");
+        }
 
-                streamWriter.WriteLine("#endregion");
-
-
-                streamWriter.WriteLine("modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());");
+        streamWriter.WriteLine("#endregion");
 
 
-                streamWriter.WriteLine(@" foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        streamWriter.WriteLine("modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());");
+
+
+        streamWriter.WriteLine(@" foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 if (typeof(ISoftDelete).IsAssignableFrom(entityType.ClrType))
                 {
@@ -1748,10 +1783,10 @@ namespace " + DataAccessNameSpace + @".Data
                 }
             }");
 
-                streamWriter.WriteLine("base.OnModelCreating(modelBuilder);");
-                streamWriter.WriteLine("}");
+        streamWriter.WriteLine("base.OnModelCreating(modelBuilder);");
+        streamWriter.WriteLine("}");
 
-                streamWriter.WriteLine(@"public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default(CancellationToken))
+        streamWriter.WriteLine(@"public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
 
             string userId = _httpContextAccessor?.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -1831,24 +1866,24 @@ throw new ApplicationException(""couldn’t handle that error""); //return the e
 
 
 
-                streamWriter.WriteLine("}");
-                streamWriter.WriteLine("}");
+        streamWriter.WriteLine("}");
+        streamWriter.WriteLine("}");
 
 
 
-            }
+    }
 
 
-            #endregion
+    #endregion
 
-            #region Repository
+    #region Repository
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraDataFolderPath, "Repository.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraDataFolderPath, "Repository.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using " + ApplicationNameSpace + @".Interfaces;
 using " + DomainNameSpace + @".Common;
 using Microsoft.EntityFrameworkCore;
@@ -1862,7 +1897,7 @@ namespace " + DataAccessNameSpace + @".Data
 {
  ");
 
-                streamWriter.WriteLine(@" public class Repository<T> : IGenericRepositoryAsync<T> where T : class
+        streamWriter.WriteLine(@" public class Repository<T> : IGenericRepositoryAsync<T> where T : class
     {
         protected readonly DbContext DbContext;
         protected readonly DbSet<T> DbSet;
@@ -1984,19 +2019,19 @@ namespace " + DataAccessNameSpace + @".Data
 
 
 
-            }
+    }
 
 
-            #endregion
+    #endregion
 
-            #region UnitOfWork
+    #region UnitOfWork
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraDataFolderPath, "UnitOfWork.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraDataFolderPath, "UnitOfWork.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using " + ApplicationNameSpace + @".Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -2008,7 +2043,7 @@ namespace " + DataAccessNameSpace + @".Data
 {
  ");
 
-                streamWriter.WriteLine(@"   public class UnitOfWork : IUnitOfWork, IDisposable
+        streamWriter.WriteLine(@"   public class UnitOfWork : IUnitOfWork, IDisposable
     {
         private Dictionary<Type, object> _repositories;
         public DbContext _context { get; }
@@ -2090,143 +2125,143 @@ namespace " + DataAccessNameSpace + @".Data
 
 
 
-            }
+    }
 
 
-            #endregion
+    #endregion
 
-            #endregion
+    #endregion
 
-            #region Extensions Classes
+    #region Extensions Classes
 
-            //            #region  EnumerablePagedListExtensions
+    //            #region  EnumerablePagedListExtensions
 
-            //            using (
-            //                StreamWriter streamWriter =
-            //                    new StreamWriter(Path.Combine(InfraExtensionsPath, "EnumerablePagedListExtensions.cs")))
-            //            {
-            //                // Create the header for the class
-            //                streamWriter.WriteLine(@"
-            //using " + DataAccessNameSpace + @".Interfaces.Data;
-            //using " + DataAccessNameSpace + @".Repositories;
-            //using System;
-            //using System.Collections.Generic;
+    //            using (
+    //                StreamWriter streamWriter =
+    //                    new StreamWriter(Path.Combine(InfraExtensionsPath, "EnumerablePagedListExtensions.cs")))
+    //            {
+    //                // Create the header for the class
+    //                streamWriter.WriteLine(@"
+    //using " + DataAccessNameSpace + @".Interfaces.Data;
+    //using " + DataAccessNameSpace + @".Repositories;
+    //using System;
+    //using System.Collections.Generic;
 
-            //namespace " + DataAccessNameSpace + @".Extensions
-            //{
-            //    /// <summary>
-            //    /// Provides some extension methods for <see cref='IEnumerable{T}'/> to provide paging capability.
-            //    /// </summary>
-            //    public static class EnumerablePagedListExtensions
-            //    {
-            //        /// <summary>
-            //        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='pageIndex'/> and <paramref name='pageSize'/>.
-            //        /// </summary>
-            //        /// <typeparam name='T'>The type of the source.</typeparam>
-            //        /// <param name='source'>The source to paging.</param>
-            //        /// <param name='pageIndex'>The index of the page.</param>
-            //        /// <param name='pageSize'>The size of the page.</param>
-            //        /// <param name='indexFrom'>The start index value.</param>
-            //        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
-            //        public static IPagedList<T> ToPagedList<T>(this IEnumerable<T> source, int pageIndex, int pageSize, int indexFrom = 0) => new PagedList<T>(source, pageIndex, pageSize, indexFrom);
+    //namespace " + DataAccessNameSpace + @".Extensions
+    //{
+    //    /// <summary>
+    //    /// Provides some extension methods for <see cref='IEnumerable{T}'/> to provide paging capability.
+    //    /// </summary>
+    //    public static class EnumerablePagedListExtensions
+    //    {
+    //        /// <summary>
+    //        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='pageIndex'/> and <paramref name='pageSize'/>.
+    //        /// </summary>
+    //        /// <typeparam name='T'>The type of the source.</typeparam>
+    //        /// <param name='source'>The source to paging.</param>
+    //        /// <param name='pageIndex'>The index of the page.</param>
+    //        /// <param name='pageSize'>The size of the page.</param>
+    //        /// <param name='indexFrom'>The start index value.</param>
+    //        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
+    //        public static IPagedList<T> ToPagedList<T>(this IEnumerable<T> source, int pageIndex, int pageSize, int indexFrom = 0) => new PagedList<T>(source, pageIndex, pageSize, indexFrom);
 
-            //        /// <summary>
-            //        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='converter'/>, <paramref name='pageIndex'/> and <paramref name='pageSize'/>
-            //        /// </summary>
-            //        /// <typeparam name='TSource'>The type of the source.</typeparam>
-            //        /// <typeparam name='TResult'>The type of the result</typeparam>
-            //        /// <param name='source'>The source to convert.</param>
-            //        /// <param name='converter'>The converter to change the <typeparamref name='TSource'/> to <typeparamref name='TResult'/>.</param>
-            //        /// <param name='pageIndex'>The page index.</param>
-            //        /// <param name='pageSize'>The page size.</param>
-            //        /// <param name='indexFrom'>The start index value.</param>
-            //        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
-            //        public static IPagedList<TResult> ToPagedList<TSource, TResult>(this IEnumerable<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter, int pageIndex, int pageSize, int indexFrom = 0) => new PagedList<TSource, TResult>(source, converter, pageIndex, pageSize, indexFrom);
-            //    }
-            //}
+    //        /// <summary>
+    //        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='converter'/>, <paramref name='pageIndex'/> and <paramref name='pageSize'/>
+    //        /// </summary>
+    //        /// <typeparam name='TSource'>The type of the source.</typeparam>
+    //        /// <typeparam name='TResult'>The type of the result</typeparam>
+    //        /// <param name='source'>The source to convert.</param>
+    //        /// <param name='converter'>The converter to change the <typeparamref name='TSource'/> to <typeparamref name='TResult'/>.</param>
+    //        /// <param name='pageIndex'>The page index.</param>
+    //        /// <param name='pageSize'>The page size.</param>
+    //        /// <param name='indexFrom'>The start index value.</param>
+    //        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
+    //        public static IPagedList<TResult> ToPagedList<TSource, TResult>(this IEnumerable<TSource> source, Func<IEnumerable<TSource>, IEnumerable<TResult>> converter, int pageIndex, int pageSize, int indexFrom = 0) => new PagedList<TSource, TResult>(source, converter, pageIndex, pageSize, indexFrom);
+    //    }
+    //}
 
-            //");
+    //");
 
-            //            }
+    //            }
 
-            //            #endregion
+    //            #endregion
 
-            //            #region QueryablePageListExtensions
-
-
+    //            #region QueryablePageListExtensions
 
 
 
-            //            using (
-            //                StreamWriter streamWriter =
-            //                    new StreamWriter(Path.Combine(InfraExtensionsPath, "QueryablePageListExtensions.cs")))
-            //            {
-            //                // Create the header for the class
-            //                streamWriter.WriteLine(@"
-            //using " + DataAccessNameSpace + @".Interfaces.Data;
-            //using " + DataAccessNameSpace + @".Repositories;
-            //using Microsoft.EntityFrameworkCore;
-            //using System;
-            //using System.Linq;
-            //using System.Threading;
-            //using System.Threading.Tasks;
 
-            //namespace " + DataAccessNameSpace + @".Extensions
-            //{
-            //    public static class QueryablePageListExtensions
-            //    {
-            //        /// <summary>
-            //        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='pageIndex'/> and <paramref name='pageSize'/>.
-            //        /// </summary>
-            //        /// <typeparam name='T'>The type of the source.</typeparam>
-            //        /// <param name='source'>The source to paging.</param>
-            //        /// <param name='pageIndex'>The index of the page.</param>
-            //        /// <param name='pageSize'>The size of the page.</param>
-            //        /// <param name='cancellationToken'>
-            //        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
-            //        /// </param>
-            //        /// <param name='indexFrom'>The start index value.</param>
-            //        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
-            //        public static async Task<IPagedList<T>> ToPagedListAsync<T>(this IQueryable<T> source, int pageIndex, int pageSize, int indexFrom = 0, CancellationToken cancellationToken = default(CancellationToken))
-            //        {
-            //            if (indexFrom > pageIndex)
-            //            {
-            //                throw new ArgumentException($""indexFrom: { indexFrom} > pageIndex: { pageIndex}, must indexFrom <= pageIndex"");
-            //            }
 
-            //            var count = await source.CountAsync(cancellationToken).ConfigureAwait(false);
-            //            var items = await source.Skip((pageIndex - indexFrom) * pageSize)
-            //                .Take(pageSize).ToListAsync(cancellationToken).ConfigureAwait(false);
+    //            using (
+    //                StreamWriter streamWriter =
+    //                    new StreamWriter(Path.Combine(InfraExtensionsPath, "QueryablePageListExtensions.cs")))
+    //            {
+    //                // Create the header for the class
+    //                streamWriter.WriteLine(@"
+    //using " + DataAccessNameSpace + @".Interfaces.Data;
+    //using " + DataAccessNameSpace + @".Repositories;
+    //using Microsoft.EntityFrameworkCore;
+    //using System;
+    //using System.Linq;
+    //using System.Threading;
+    //using System.Threading.Tasks;
 
-            //            var pagedList = new PagedList<T>()
-            //            {
-            //                PageIndex = pageIndex,
-            //                PageSize = pageSize,
-            //                IndexFrom = indexFrom,
-            //                TotalCount = count,
-            //                Items = items,
-            //                TotalPages = (int)Math.Ceiling(count / (double)pageSize)
-            //            };
+    //namespace " + DataAccessNameSpace + @".Extensions
+    //{
+    //    public static class QueryablePageListExtensions
+    //    {
+    //        /// <summary>
+    //        /// Converts the specified source to <see cref='IPagedList{T}'/> by the specified <paramref name='pageIndex'/> and <paramref name='pageSize'/>.
+    //        /// </summary>
+    //        /// <typeparam name='T'>The type of the source.</typeparam>
+    //        /// <param name='source'>The source to paging.</param>
+    //        /// <param name='pageIndex'>The index of the page.</param>
+    //        /// <param name='pageSize'>The size of the page.</param>
+    //        /// <param name='cancellationToken'>
+    //        ///     A <see cref='CancellationToken' /> to observe while waiting for the task to complete.
+    //        /// </param>
+    //        /// <param name='indexFrom'>The start index value.</param>
+    //        /// <returns>An instance of the inherited from <see cref='IPagedList{T}'/> interface.</returns>
+    //        public static async Task<IPagedList<T>> ToPagedListAsync<T>(this IQueryable<T> source, int pageIndex, int pageSize, int indexFrom = 0, CancellationToken cancellationToken = default(CancellationToken))
+    //        {
+    //            if (indexFrom > pageIndex)
+    //            {
+    //                throw new ArgumentException($""indexFrom: { indexFrom} > pageIndex: { pageIndex}, must indexFrom <= pageIndex"");
+    //            }
 
-            //            return pagedList;
-            //        }
-            //    }
-            //}
+    //            var count = await source.CountAsync(cancellationToken).ConfigureAwait(false);
+    //            var items = await source.Skip((pageIndex - indexFrom) * pageSize)
+    //                .Take(pageSize).ToListAsync(cancellationToken).ConfigureAwait(false);
 
-            //");
+    //            var pagedList = new PagedList<T>()
+    //            {
+    //                PageIndex = pageIndex,
+    //                PageSize = pageSize,
+    //                IndexFrom = indexFrom,
+    //                TotalCount = count,
+    //                Items = items,
+    //                TotalPages = (int)Math.Ceiling(count / (double)pageSize)
+    //            };
 
-            //            }
+    //            return pagedList;
+    //        }
+    //    }
+    //}
 
-            //            #endregion
+    //");
 
-            #region LinqExtensions
+    //            }
 
-            using (
-    StreamWriter streamWriter =
-        new StreamWriter(Path.Combine(InfraExtensionsPath, "LinqExtensions.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    //            #endregion
+
+    #region LinqExtensions
+
+    using (
+StreamWriter streamWriter =
+new StreamWriter(Path.Combine(InfraExtensionsPath, "LinqExtensions.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using " + DomainNameSpace + @".Common;
 using System;
 using System.Linq;
@@ -2284,18 +2319,18 @@ namespace " + DataAccessNameSpace + @".Extensions
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region SoftDeleteQueryExtension
+    #region SoftDeleteQueryExtension
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraExtensionsPath, "SoftDeleteQueryExtension.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraExtensionsPath, "SoftDeleteQueryExtension.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using " + DomainNameSpace + @".Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
@@ -2328,23 +2363,23 @@ namespace " + DataAccessNameSpace + @".Extensions
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #endregion
+    #endregion
 
 
-            #region Identity
+    #region Identity
 
-            #region AuthService
+    #region AuthService
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraIdentityServicesPath, "AuthService.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraIdentityServicesPath, "AuthService.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 
 using " + ApplicationNameSpace + @".Interfaces;
 using " + DomainNameSpace + @".Common;
@@ -2488,20 +2523,20 @@ namespace " + DataAccessNameSpace + @".Identity.Services
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
 
 
-            #region PermissionAuthorizationHandler
+    #region PermissionAuthorizationHandler
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionAuthorizationHandler.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionAuthorizationHandler.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 
 
 using " + DomainNameSpace + @".Common;
@@ -2596,19 +2631,19 @@ namespace " + DataAccessNameSpace + @".Identity
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
 
-            #region PermissionChecker
+    #region PermissionChecker
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionChecker.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionChecker.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 
 using " + ApplicationNameSpace + @".Interfaces;
 using " + DomainNameSpace + @".Common;
@@ -2649,19 +2684,19 @@ namespace " + DataAccessNameSpace + @".Identity
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
 
-            #region PermissionPolicyProvider
+    #region PermissionPolicyProvider
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionPolicyProvider.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionPolicyProvider.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
@@ -2707,19 +2742,19 @@ namespace " + DataAccessNameSpace + @".Identity
 
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
 
-            #region PermissionRequirement
+    #region PermissionRequirement
 
-            using (
-                StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionRequirement.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (
+        StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(InfraIdentityPath, "PermissionRequirement.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using Microsoft.AspNetCore.Authorization;
 
 namespace " + DataAccessNameSpace + @".Identity
@@ -2738,229 +2773,229 @@ namespace " + DataAccessNameSpace + @".Identity
 
 ");
 
-            }
-
-            #endregion
-
-            #endregion
-
-
-
-            //            #region UnitOfWork
-
-            //            using (
-            //                StreamWriter streamWriter =
-            //                    new StreamWriter(Path.Combine(InfraDataFolderPath, "UnitOfWork.cs")))
-            //            {
-            //                // Create the header for the class
-            //                streamWriter.WriteLine(@"
-            //using System;
-            //using System.Collections.Generic;
-            //using System.Linq;
-            //using System.Threading.Tasks;
-            //using " + DataAccessNameSpace + @".Interfaces.Data;
-            //using " + DataAccessNameSpace + @".Interfaces.Repositories;
-            //using " + DataAccessNameSpace + @".Repositories;
-            //using Microsoft.EntityFrameworkCore;
-            //using Microsoft.EntityFrameworkCore.Storage;
+    }
+
+    #endregion
+
+    #endregion
+
+
+
+    //            #region UnitOfWork
+
+    //            using (
+    //                StreamWriter streamWriter =
+    //                    new StreamWriter(Path.Combine(InfraDataFolderPath, "UnitOfWork.cs")))
+    //            {
+    //                // Create the header for the class
+    //                streamWriter.WriteLine(@"
+    //using System;
+    //using System.Collections.Generic;
+    //using System.Linq;
+    //using System.Threading.Tasks;
+    //using " + DataAccessNameSpace + @".Interfaces.Data;
+    //using " + DataAccessNameSpace + @".Interfaces.Repositories;
+    //using " + DataAccessNameSpace + @".Repositories;
+    //using Microsoft.EntityFrameworkCore;
+    //using Microsoft.EntityFrameworkCore.Storage;
 
-            //namespace " + DataAccessNameSpace + @".Data {
-            //  /// <summary>
-            //    /// Represents the default implementation of the <see cref='IUnitOfWork'/> and <see cref='IUnitOfWork{TContext}'/> interface.
-            //    /// </summary>
-            //    /// <typeparam name='TContext'>The type of the db context.</typeparam>
-            //    public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork where TContext : DbContext
-            //    {
-            //        private bool _disposed = false;
-            //        private Dictionary<Type, object> _repositories;
-            //        private readonly TContext _context;
+    //namespace " + DataAccessNameSpace + @".Data {
+    //  /// <summary>
+    //    /// Represents the default implementation of the <see cref='IUnitOfWork'/> and <see cref='IUnitOfWork{TContext}'/> interface.
+    //    /// </summary>
+    //    /// <typeparam name='TContext'>The type of the db context.</typeparam>
+    //    public class UnitOfWork<TContext> : IRepositoryFactory, IUnitOfWork where TContext : DbContext
+    //    {
+    //        private bool _disposed = false;
+    //        private Dictionary<Type, object> _repositories;
+    //        private readonly TContext _context;
 
-            //        /// <summary>
-            //        /// Gets the db context.
-            //        /// </summary>
-            //        /// <returns>The instance of type <typeparamref name='TContext'/>.</returns>
-            //        public TContext DbContext
-            //        {
-            //            get { return _context; }
-            //        }
+    //        /// <summary>
+    //        /// Gets the db context.
+    //        /// </summary>
+    //        /// <returns>The instance of type <typeparamref name='TContext'/>.</returns>
+    //        public TContext DbContext
+    //        {
+    //            get { return _context; }
+    //        }
 
 
 
 
-            //        /// <summary>
-            //        /// Initializes a new instance of the <see cref='UnitOfWork{TContext}'/> class.
-            //        /// </summary>
-            //        /// <param name='context'>The context.</param>
-            //        public UnitOfWork(TContext context)
-            //        {
-            //            _context = context ?? throw new ArgumentNullException(nameof(context));
-            //        }
+    //        /// <summary>
+    //        /// Initializes a new instance of the <see cref='UnitOfWork{TContext}'/> class.
+    //        /// </summary>
+    //        /// <param name='context'>The context.</param>
+    //        public UnitOfWork(TContext context)
+    //        {
+    //            _context = context ?? throw new ArgumentNullException(nameof(context));
+    //        }
 
 
 
 
-            //         #region SQL
-            //        /// <summary>
-            //        /// Uses raw SQL queries to fetch the specified <typeparamref name='TEntity' /> data.
-            //        /// </summary>
-            //        /// <typeparam name='TEntity'>The type of the entity.</typeparam>
-            //        /// <param name='sql'>The raw SQL.</param>
-            //        /// <param name='parameters'>The parameters.</param>
-            //        /// <returns>An <see cref='IQueryable{T}' /> that contains elements that satisfy the condition specified by raw SQL.</returns>
-            //        public IQueryable<TEntity> FromSqlRaw<TEntity>(string sql, params object[] parameters) where TEntity : class
-            //        {
-            //            return _context.Set<TEntity>().FromSqlRaw(sql, parameters);
-            //        }
+    //         #region SQL
+    //        /// <summary>
+    //        /// Uses raw SQL queries to fetch the specified <typeparamref name='TEntity' /> data.
+    //        /// </summary>
+    //        /// <typeparam name='TEntity'>The type of the entity.</typeparam>
+    //        /// <param name='sql'>The raw SQL.</param>
+    //        /// <param name='parameters'>The parameters.</param>
+    //        /// <returns>An <see cref='IQueryable{T}' /> that contains elements that satisfy the condition specified by raw SQL.</returns>
+    //        public IQueryable<TEntity> FromSqlRaw<TEntity>(string sql, params object[] parameters) where TEntity : class
+    //        {
+    //            return _context.Set<TEntity>().FromSqlRaw(sql, parameters);
+    //        }
 
-            //        /// <summary>
-            //        /// Executes the specified raw SQL command.
-            //        /// </summary>
-            //        /// <param name='sql'>The raw SQL.</param>
-            //        /// <param name='parameters'>The parameters.</param>
-            //        /// <returns>The number of state entities written to database.</returns>
-            //        public int ExecuteSqlCommand(string sql, params object[] parameters)
-            //        {
-            //            return _context.Database.ExecuteSqlCommand(sql, parameters);
-            //        }
+    //        /// <summary>
+    //        /// Executes the specified raw SQL command.
+    //        /// </summary>
+    //        /// <param name='sql'>The raw SQL.</param>
+    //        /// <param name='parameters'>The parameters.</param>
+    //        /// <returns>The number of state entities written to database.</returns>
+    //        public int ExecuteSqlCommand(string sql, params object[] parameters)
+    //        {
+    //            return _context.Database.ExecuteSqlCommand(sql, parameters);
+    //        }
 
-            //        #endregion
+    //        #endregion
 
-            //        #region GET
+    //        #region GET
 
 
 
-            //        ///// <summary>
-            //        ///// Gets the specified repository for the <typeparamref name='TEntity'/>.
-            //        ///// </summary>
-            //        ///// <typeparam name='TEntity'>The type of the entity.</typeparam>
-            //        ///// <returns>An instance of type inherited from <see cref='IRepository{TEntity}'/> interface.</returns>
-            //        //public IRepository<TEntity> GetGenericRepository<TEntity>() where TEntity : class
-            //        //{
-            //        //    if (_repositories == null)
-            //        //        _repositories = new Dictionary<Type, object>();
+    //        ///// <summary>
+    //        ///// Gets the specified repository for the <typeparamref name='TEntity'/>.
+    //        ///// </summary>
+    //        ///// <typeparam name='TEntity'>The type of the entity.</typeparam>
+    //        ///// <returns>An instance of type inherited from <see cref='IRepository{TEntity}'/> interface.</returns>
+    //        //public IRepository<TEntity> GetGenericRepository<TEntity>() where TEntity : class
+    //        //{
+    //        //    if (_repositories == null)
+    //        //        _repositories = new Dictionary<Type, object>();
 
-            //        //    var type = typeof(TEntity);
-            //        //    if (!_repositories.ContainsKey(type))
-            //        //        _repositories[type] = new Repository<TEntity>(_context);
+    //        //    var type = typeof(TEntity);
+    //        //    if (!_repositories.ContainsKey(type))
+    //        //        _repositories[type] = new Repository<TEntity>(_context);
 
-            //        //    return (IRepository<TEntity>)_repositories[type];
-            //        //}
+    //        //    return (IRepository<TEntity>)_repositories[type];
+    //        //}
 
 
-            //        public  TEntity GetRepository<TEntity>() where TEntity : class
-            //        {
+    //        public  TEntity GetRepository<TEntity>() where TEntity : class
+    //        {
 
-            //            var interfaceType = typeof(TEntity);
+    //            var interfaceType = typeof(TEntity);
 
 
-            //            if (_repositories == null)
-            //            {
-            //                _repositories = new Dictionary<Type, object>();
+    //            if (_repositories == null)
+    //            {
+    //                _repositories = new Dictionary<Type, object>();
 
 
-            //            }
-            //            var type = AppDomain.CurrentDomain.GetAssemblies()
-            //                .SelectMany(s => s.GetTypes())
-            //                .Where(x => x.GetInterface(interfaceType.Name) != null).FirstOrDefault();
+    //            }
+    //            var type = AppDomain.CurrentDomain.GetAssemblies()
+    //                .SelectMany(s => s.GetTypes())
+    //                .Where(x => x.GetInterface(interfaceType.Name) != null).FirstOrDefault();
 
-            //            if (type != null)
-            //            {
-            //                if (!_repositories.ContainsKey(interfaceType))
-            //                {
-            //                    _repositories[interfaceType] = Activator.CreateInstance(type, _context);
-            //                }
+    //            if (type != null)
+    //            {
+    //                if (!_repositories.ContainsKey(interfaceType))
+    //                {
+    //                    _repositories[interfaceType] = Activator.CreateInstance(type, _context);
+    //                }
 
-            //                return (TEntity) _repositories[interfaceType];
+    //                return (TEntity) _repositories[interfaceType];
 
-            //            }
+    //            }
 
 
-            //            return null;
-            //        }
+    //            return null;
+    //        }
 
 
-            //        #endregion
+    //        #endregion
 
-            //        #region SAVE
-            //        /// <inheritdoc />
-            //        /// <summary>
-            //        /// Saves all changes made in this context to the database.
-            //        /// </summary>
-            //        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
-            //        /// <returns>The number of state entries written to the database.</returns>
-            //        public int SaveChanges()
-            //        {
+    //        #region SAVE
+    //        /// <inheritdoc />
+    //        /// <summary>
+    //        /// Saves all changes made in this context to the database.
+    //        /// </summary>
+    //        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
+    //        /// <returns>The number of state entries written to the database.</returns>
+    //        public int SaveChanges()
+    //        {
 
-            //            return _context.SaveChanges();
+    //            return _context.SaveChanges();
 
 
-            //        }
+    //        }
 
-            //        /// <summary>
-            //        /// Asynchronously saves all changes made in this unit of work to the database.
-            //        /// </summary>
-            //        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
-            //        /// <returns>A <see cref='Task{TResult}'/> that represents the asynchronous save operation. The task result contains the number of state entities written to database.</returns>
-            //        public async Task<int> SaveChangesAsync()
-            //        {
+    //        /// <summary>
+    //        /// Asynchronously saves all changes made in this unit of work to the database.
+    //        /// </summary>
+    //        /// <param name='ensureAutoHistory'><c>True</c> if save changes ensure auto record the change history.</param>
+    //        /// <returns>A <see cref='Task{TResult}'/> that represents the asynchronous save operation. The task result contains the number of state entities written to database.</returns>
+    //        public async Task<int> SaveChangesAsync()
+    //        {
 
-            //            return await _context.SaveChangesAsync();
+    //            return await _context.SaveChangesAsync();
 
 
-            //        }
+    //        }
 
-            //        #endregion
+    //        #endregion
 
-            //        #region Dispose
-            //        /// <summary>
-            //        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-            //        /// </summary>
-            //        public void Dispose()
-            //        {
-            //            Dispose(true);
-            //            GC.SuppressFinalize(this);
-            //        }
+    //        #region Dispose
+    //        /// <summary>
+    //        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    //        /// </summary>
+    //        public void Dispose()
+    //        {
+    //            Dispose(true);
+    //            GC.SuppressFinalize(this);
+    //        }
 
-            //        /// <summary>
-            //        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-            //        /// </summary>
-            //        /// <param name='disposing'>The disposing.</param>
-            //        protected virtual void Dispose(bool disposing)
-            //        {
-            //            if (!_disposed && disposing)
-            //            {   // clear repositories
-            //                _repositories?.Clear();
+    //        /// <summary>
+    //        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    //        /// </summary>
+    //        /// <param name='disposing'>The disposing.</param>
+    //        protected virtual void Dispose(bool disposing)
+    //        {
+    //            if (!_disposed && disposing)
+    //            {   // clear repositories
+    //                _repositories?.Clear();
 
-            //                // dispose the db context.
-            //                _context.Dispose();
-            //            }
+    //                // dispose the db context.
+    //                _context.Dispose();
+    //            }
 
-            //            _disposed = true;
-            //        }
-            //        #endregion
-            //    }
-            //}
+    //            _disposed = true;
+    //        }
+    //        #endregion
+    //    }
+    //}
 
-            //");
+    //");
 
 
 
 
-            //            }
+    //            }
 
 
-            //            #endregion
+    //            #endregion
 
 
-            #region Infrastructure Dependency Injection
+    #region Infrastructure Dependency Injection
 
 
 
-            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(DataPath, "DependencyInjection.cs")))
-            {
-                // Create the header for the class
+    using (StreamWriter streamWriter = new StreamWriter(Path.Combine(DataPath, "DependencyInjection.cs")))
+    {
+        // Create the header for the class
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
 
 using " + ApplicationNameSpace + @".Interfaces;
 using " + ApplicationNameSpace + @".Interfaces.Repositories;
@@ -3018,12 +3053,12 @@ namespace " + DataAccessNameSpace + @"
 
 ");
 
-                foreach (Table table in tableList)
-                {
-                    streamWriter.WriteLine("services.AddScoped<I" + UtilityHelper.MakeSingular(table.Name) + "RepositoryAsync, " + UtilityHelper.MakeSingular(table.Name) + "RepositoryAsync>();");
-                }
+        foreach (Table table in tableList)
+        {
+            streamWriter.WriteLine("services.AddScoped<I" + UtilityHelper.MakeSingular(table.Name) + "RepositoryAsync, " + UtilityHelper.MakeSingular(table.Name) + "RepositoryAsync>();");
+        }
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
                 services.AddTransient<UserManager<ApplicationUser>>();
                 services.AddScoped<IUnitOfWork, UnitOfWork>();
                 services.AddTransient<IAuthService, AuthService>();
@@ -3118,7 +3153,7 @@ namespace " + DataAccessNameSpace + @"
             }
         }
     }"
-                );
+        );
 
 
 
@@ -3128,20 +3163,20 @@ namespace " + DataAccessNameSpace + @"
 
 
 
-            }
-            #endregion
+    }
+    #endregion
 
 
 
-            #region EF Code
+    #region EF Code
 
 
 
-            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(DataPath, "efCode.txt")))
-            {
-                // Create the header for the class
+    using (StreamWriter streamWriter = new StreamWriter(Path.Combine(DataPath, "efCode.txt")))
+    {
+        // Create the header for the class
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
 dotnet tool update --global dotnet-ef
 
 dotnet ef database drop --project ""BS.Infrastructure"" --startup-project ""BS.API""
@@ -3159,59 +3194,59 @@ dotnet ef database drop --project ""BS.Infrastructure"" --startup-project ""BS.A
 
 
 
-            }
-            #endregion
-        }
-        private static void CreateApplicationClasses()
-        {
+    }
+    #endregion
+}
+private static void CreateApplicationClasses()
+{
 
 
-            //using (SqlConnection connection = new SqlConnection(UtilityHelper.ConnectionString))
-            //{
-            //    try
-            //    {
-            //        connection.Open();
+    //using (SqlConnection connection = new SqlConnection(UtilityHelper.ConnectionString))
+    //{
+    //    try
+    //    {
+    //        connection.Open();
 
-            //        DataTable dataTable = new DataTable();
-            //        SqlDataAdapter dataAdapter = new SqlDataAdapter(UtilityHelper.GetSelectedTablesAndViews(connection.Database, tables.Where(o => o.Type != SchemaTypeEnum.StoredProcedure).Select(o => o.Title).ToList()), connection);
-            //        dataAdapter.Fill(dataTable);
+    //        DataTable dataTable = new DataTable();
+    //        SqlDataAdapter dataAdapter = new SqlDataAdapter(UtilityHelper.GetSelectedTablesAndViews(connection.Database, tables.Where(o => o.Type != SchemaTypeEnum.StoredProcedure).Select(o => o.Title).ToList()), connection);
+    //        dataAdapter.Fill(dataTable);
 
-            //        // Process each table
-            //        foreach (DataRow dataRow in dataTable.Rows)
-            //        {
-            //            Table table = new Table();
-            //            table.Name = (string)dataRow["TABLE_NAME"];
-            //            table.Type = (string)dataRow["TABLE_TYPE"];
-            //            UtilityHelper.QueryTable(connection, table);
-            //            tableList.Add(table);
-            //        }
+    //        // Process each table
+    //        foreach (DataRow dataRow in dataTable.Rows)
+    //        {
+    //            Table table = new Table();
+    //            table.Name = (string)dataRow["TABLE_NAME"];
+    //            table.Type = (string)dataRow["TABLE_TYPE"];
+    //            UtilityHelper.QueryTable(connection, table);
+    //            tableList.Add(table);
+    //        }
 
-            //    }
-            //    catch (Exception ex)
-            //    {
+    //    }
+    //    catch (Exception ex)
+    //    {
 
-            //    }
-            //    finally
-            //    {
-            //        connection.Close();
-            //    }
-            //}
-
-
-            StringBuilder sb = new StringBuilder();
+    //    }
+    //    finally
+    //    {
+    //        connection.Close();
+    //    }
+    //}
 
 
+    StringBuilder sb = new StringBuilder();
 
 
-            #region Exceptions Classes
 
-            #region BadRequestException
 
-            using (StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(ApplicationExceptionsPath, "BadRequestException.cs")))
-            {
+    #region Exceptions Classes
 
-                streamWriter.WriteLine(@"using System;
+    #region BadRequestException
+
+    using (StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(ApplicationExceptionsPath, "BadRequestException.cs")))
+    {
+
+        streamWriter.WriteLine(@"using System;
 
 namespace " + ApplicationNameSpace + @".Exceptions
 {
@@ -3224,16 +3259,16 @@ namespace " + ApplicationNameSpace + @".Exceptions
     }
 }
 ");
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region NotFoundException
+    #region NotFoundException
 
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApplicationExceptionsPath, "NotFoundException.cs")))
-            {
-                streamWriter.WriteLine(@"using System;
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApplicationExceptionsPath, "NotFoundException.cs")))
+    {
+        streamWriter.WriteLine(@"using System;
 
 namespace " + ApplicationNameSpace + @".Exceptions
 {
@@ -3247,16 +3282,16 @@ namespace " + ApplicationNameSpace + @".Exceptions
 }
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region ValidationException
+    #region ValidationException
 
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApplicationExceptionsPath, "ValidationException.cs")))
-            {
-                streamWriter.WriteLine(@"using System;
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApplicationExceptionsPath, "ValidationException.cs")))
+    {
+        streamWriter.WriteLine(@"using System;
 using System.Collections.Generic;
 using FluentValidation.Results;
     
@@ -3279,22 +3314,22 @@ namespace " + ApplicationNameSpace + @".Exceptions
 }
 ");
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #endregion
+    #endregion
 
 
-            #region Interfaces Classes
+    #region Interfaces Classes
 
-            #region IAuthService
+    #region IAuthService
 
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IAuthService.cs")))
-            {
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IAuthService.cs")))
+    {
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
 using " + DomainNameSpace + @".Common;
 using " + DomainNameSpace + @".Models;
 using System;
@@ -3311,17 +3346,17 @@ namespace " + ApplicationNameSpace + @".Interfaces
     }
 }
 ");
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region IDateTimeService
+    #region IDateTimeService
 
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IDateTimeService.cs")))
-            {
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IDateTimeService.cs")))
+    {
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
 using System;
 namespace " + ApplicationNameSpace + @".Interfaces
 {
@@ -3331,17 +3366,17 @@ namespace " + ApplicationNameSpace + @".Interfaces
     }
 }
 ");
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region IGenericRepositoryAsync
+    #region IGenericRepositoryAsync
 
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IGenericRepositoryAsync.cs")))
-            {
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IGenericRepositoryAsync.cs")))
+    {
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
 using " + DomainNameSpace + @".Common;
 using System;
 using System.Collections.Generic;
@@ -3397,17 +3432,17 @@ namespace " + ApplicationNameSpace + @".Interfaces
     }
 }
 ");
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region IPermissionChecker
+    #region IPermissionChecker
 
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IPermissionChecker.cs")))
-            {
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IPermissionChecker.cs")))
+    {
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
 using System;
 namespace " + ApplicationNameSpace + @".Interfaces
 {
@@ -3417,17 +3452,17 @@ namespace " + ApplicationNameSpace + @".Interfaces
     }
 }
 ");
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region IUnitOfWork
+    #region IUnitOfWork
 
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IUnitOfWork.cs")))
-            {
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApplicationInterfacesPath, "IUnitOfWork.cs")))
+    {
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
 using System;
 using System.Threading.Tasks;
 namespace " + ApplicationNameSpace + @".Interfaces
@@ -3440,238 +3475,238 @@ namespace " + ApplicationNameSpace + @".Interfaces
 
 }
 ");
+    }
+
+    #endregion
+
+    #endregion
+
+    foreach (Table table in tableList)
+    {
+        var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
+
+        string className = "";
+
+        className = UtilityHelper.MakeSingular(table.Name);
+
+        #region Repositories Classes
+
+        using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationInterfacesRepositoriesPath,
+            "I" + className + "RepositoryAsync.cs")))
+        {
+            streamWriter.WriteLine("using System;");
+            streamWriter.WriteLine("using " + DomainNameSpace + ".Entities;");
+            streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Interfaces.Repositories");
+            streamWriter.WriteLine("{");
+            streamWriter.WriteLine("\tpublic interface " + "I" + className +
+                                   "RepositoryAsync : IGenericRepositoryAsync<" + className + ">");
+            streamWriter.WriteLine("\t{");
+            streamWriter.WriteLine("\t}");
+            streamWriter.WriteLine("}");
+        }
+
+
+        #endregion
+
+        #region Dtos Classes
+
+
+        #region ReadDto
+
+        using (StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(ApplicationDtosPath, className + "ReadDto.cs")))
+        {
+
+            streamWriter.WriteLine("using System;");
+            streamWriter.WriteLine("using System.Collections.Generic;");
+            streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Dtos");
+            streamWriter.WriteLine("{");
+            streamWriter.WriteLine("\tpublic class " + className + "ReadDto");
+            streamWriter.WriteLine("\t{");
+
+            for (int i = 0; i < table.Columns.Count; i++)
+            {
+                Column column = table.Columns[i];
+                string parameter = UtilityHelper.CreateMethodParameter(column);
+                string type = parameter.Split(' ')[0];
+                string name = parameter.Split(' ')[1];
+                streamWriter.WriteLine("\t\tpublic " + type + " " + UtilityHelper.FormatPascal(name) +
+                                       " { get; set; }");
             }
 
-            #endregion
+            streamWriter.WriteLine("\t}");
+            streamWriter.WriteLine("}");
+        }
 
-            #endregion
+        #endregion
 
-            foreach (Table table in tableList)
+        #region UpsertDto
+
+        using (StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(ApplicationDtosPath, className + "UpsertDto.cs")))
+        {
+            streamWriter.WriteLine("using System;");
+            streamWriter.WriteLine("using System.Collections.Generic;");
+            streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Dtos");
+            streamWriter.WriteLine("{");
+            streamWriter.WriteLine("\tpublic class " + className + "UpsertDto");
+            streamWriter.WriteLine("\t{");
+
+            for (int i = 0; i < table.Columns.Count; i++)
             {
-                var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
+                Column column = table.Columns[i];
+                string parameter = UtilityHelper.CreateMethodParameter(column);
+                string type = parameter.Split(' ')[0];
+                string name = parameter.Split(' ')[1];
+                if (
+                    name.ToLower() != "CreatedBy".ToLower()
+                    && name.ToLower() != "CreatedAt".ToLower()
+                    && name.ToLower() != "LastModifiedBy".ToLower()
+                    && name.ToLower() != "LastModifiedAt".ToLower()
+                    && name.ToLower() != "SoftDeleted".ToLower()
+                    && name.ToLower() != "RowVersion".ToLower()
 
-                string className = "";
-
-                className = UtilityHelper.MakeSingular(table.Name);
-
-                #region Repositories Classes
-
-                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationInterfacesRepositoriesPath,
-                    "I" + className + "RepositoryAsync.cs")))
+                )
                 {
-                    streamWriter.WriteLine("using System;");
-                    streamWriter.WriteLine("using " + DomainNameSpace + ".Entities;");
-                    streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Interfaces.Repositories");
-                    streamWriter.WriteLine("{");
-                    streamWriter.WriteLine("\tpublic interface " + "I" + className +
-                                           "RepositoryAsync : IGenericRepositoryAsync<" + className + ">");
-                    streamWriter.WriteLine("\t{");
-                    streamWriter.WriteLine("\t}");
-                    streamWriter.WriteLine("}");
+                    streamWriter.WriteLine("\t\tpublic " + type + " " + UtilityHelper.FormatPascal(name) +
+                                           " { get; set; }");
                 }
+            }
+
+            streamWriter.WriteLine("\t}");
+            streamWriter.WriteLine("}");
+        }
+
+        #endregion
 
 
-                #endregion
 
-                #region Dtos Classes
+        #endregion
+
+        #region Validations Classes
 
 
-                #region ReadDto
 
-                using (StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(ApplicationDtosPath, className + "ReadDto.cs")))
+
+        sb.Clear();
+        using (StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(ApplicationValidationsPath, className + "UpsertDtoValidator.cs")))
+        {
+            streamWriter.WriteLine("using System;");
+            streamWriter.WriteLine("using FluentValidation;");
+            streamWriter.WriteLine("using " + ApplicationNameSpace + ".Dtos;");
+            streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Validations");
+            streamWriter.WriteLine("{");
+            streamWriter.WriteLine("\tpublic class " + className + "UpsertDtoValidator : AbstractValidator<" +
+                                   className + "UpsertDto> ");
+            streamWriter.WriteLine("\t{");
+
+            streamWriter.WriteLine("\tpublic " + className + "UpsertDtoValidator()");
+            streamWriter.WriteLine("{");
+
+            for (int i = 0; i < table.Columns.Count; i++)
+            {
+                Column column = table.Columns[i];
+                string parameter = UtilityHelper.CreateMethodParameter(column);
+                string type = parameter.Split(' ')[0];
+                string name = parameter.Split(' ')[1];
+                if (
+                    name.ToLower() != "CreatedBy".ToLower()
+                    && name.ToLower() != "CreatedAt".ToLower()
+                    && name.ToLower() != "LastModifiedBy".ToLower()
+                    && name.ToLower() != "LastModifiedAt".ToLower()
+                    && name.ToLower() != "SoftDeleted".ToLower()
+                    && name.ToLower() != "RowVersion".ToLower()
+
+                )
                 {
-
-                    streamWriter.WriteLine("using System;");
-                    streamWriter.WriteLine("using System.Collections.Generic;");
-                    streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Dtos");
-                    streamWriter.WriteLine("{");
-                    streamWriter.WriteLine("\tpublic class " + className + "ReadDto");
-                    streamWriter.WriteLine("\t{");
-
-                    for (int i = 0; i < table.Columns.Count; i++)
-                    {
-                        Column column = table.Columns[i];
-                        string parameter = UtilityHelper.CreateMethodParameter(column);
-                        string type = parameter.Split(' ')[0];
-                        string name = parameter.Split(' ')[1];
-                        streamWriter.WriteLine("\t\tpublic " + type + " " + UtilityHelper.FormatPascal(name) +
-                                               " { get; set; }");
-                    }
-
-                    streamWriter.WriteLine("\t}");
-                    streamWriter.WriteLine("}");
+                    streamWriter.WriteLine("\t\t" + UtilityHelper.CreateFluentValidationRules("DomainResource",
+                        table.Name,
+                        column, table.ForeignKeys, useResourceFile));
                 }
-
-                #endregion
-
-                #region UpsertDto
-
-                using (StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(ApplicationDtosPath, className + "UpsertDto.cs")))
-                {
-                    streamWriter.WriteLine("using System;");
-                    streamWriter.WriteLine("using System.Collections.Generic;");
-                    streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Dtos");
-                    streamWriter.WriteLine("{");
-                    streamWriter.WriteLine("\tpublic class " + className + "UpsertDto");
-                    streamWriter.WriteLine("\t{");
-
-                    for (int i = 0; i < table.Columns.Count; i++)
-                    {
-                        Column column = table.Columns[i];
-                        string parameter = UtilityHelper.CreateMethodParameter(column);
-                        string type = parameter.Split(' ')[0];
-                        string name = parameter.Split(' ')[1];
-                        if (
-                            name.ToLower() != "CreatedBy".ToLower()
-                            && name.ToLower() != "CreatedAt".ToLower()
-                            && name.ToLower() != "LastModifiedBy".ToLower()
-                            && name.ToLower() != "LastModifiedAt".ToLower()
-                            && name.ToLower() != "SoftDeleted".ToLower()
-                            && name.ToLower() != "RowVersion".ToLower()
-
-                        )
-                        {
-                            streamWriter.WriteLine("\t\tpublic " + type + " " + UtilityHelper.FormatPascal(name) +
-                                                   " { get; set; }");
-                        }
-                    }
-
-                    streamWriter.WriteLine("\t}");
-                    streamWriter.WriteLine("}");
-                }
-
-                #endregion
+            }
 
 
 
-                #endregion
+            streamWriter.WriteLine("}");
 
-                #region Validations Classes
+            streamWriter.WriteLine("\t}");
+            streamWriter.WriteLine("}");
+        }
 
+        //var validatorNameCreateDto = classNameCreateDto;
+        ////   var validatorNameUpdateDto = classNameUpdateDto;
 
+        //classNameCreateDto = classNameCreateDto + "Validator";
+        ////  classNameUpdateDto = classNameUpdateDto + "Validator";
 
+        //using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationValidationsPath, classNameCreateDto + ".cs")))
+        //{
+        //    string clsName = sb.ToString().Replace("#className#", classNameCreateDto).Replace("#validatorName#", validatorNameCreateDto).ToString();
+        //    streamWriter.WriteLine(clsName);
 
-                sb.Clear();
-                using (StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(ApplicationValidationsPath, className + "UpsertDtoValidator.cs")))
-                {
-                    streamWriter.WriteLine("using System;");
-                    streamWriter.WriteLine("using FluentValidation;");
-                    streamWriter.WriteLine("using " + ApplicationNameSpace + ".Dtos;");
-                    streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Validations");
-                    streamWriter.WriteLine("{");
-                    streamWriter.WriteLine("\tpublic class " + className + "UpsertDtoValidator : AbstractValidator<" +
-                                           className + "UpsertDto> ");
-                    streamWriter.WriteLine("\t{");
-
-                    streamWriter.WriteLine("\tpublic " + className + "UpsertDtoValidator()");
-                    streamWriter.WriteLine("{");
-
-                    for (int i = 0; i < table.Columns.Count; i++)
-                    {
-                        Column column = table.Columns[i];
-                        string parameter = UtilityHelper.CreateMethodParameter(column);
-                        string type = parameter.Split(' ')[0];
-                        string name = parameter.Split(' ')[1];
-                        if (
-                            name.ToLower() != "CreatedBy".ToLower()
-                            && name.ToLower() != "CreatedAt".ToLower()
-                            && name.ToLower() != "LastModifiedBy".ToLower()
-                            && name.ToLower() != "LastModifiedAt".ToLower()
-                            && name.ToLower() != "SoftDeleted".ToLower()
-                            && name.ToLower() != "RowVersion".ToLower()
-
-                        )
-                        {
-                            streamWriter.WriteLine("\t\t" + UtilityHelper.CreateFluentValidationRules("DomainResource",
-                                table.Name,
-                                column, table.ForeignKeys, useResourceFile));
-                        }
-                    }
+        //}
 
 
-
-                    streamWriter.WriteLine("}");
-
-                    streamWriter.WriteLine("\t}");
-                    streamWriter.WriteLine("}");
-                }
-
-                //var validatorNameCreateDto = classNameCreateDto;
-                ////   var validatorNameUpdateDto = classNameUpdateDto;
-
-                //classNameCreateDto = classNameCreateDto + "Validator";
-                ////  classNameUpdateDto = classNameUpdateDto + "Validator";
-
-                //using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationValidationsPath, classNameCreateDto + ".cs")))
-                //{
-                //    string clsName = sb.ToString().Replace("#className#", classNameCreateDto).Replace("#validatorName#", validatorNameCreateDto).ToString();
-                //    streamWriter.WriteLine(clsName);
-
-                //}
+        //using (StreamWriter streamWriter = new StreamWriter(Path.Combine(UtilityHelper.ApplicationValidationsPath, classNameUpdateDto + ".cs")))
+        //{
+        //    string clsName = sb.ToString().Replace("#className#", classNameUpdateDto).Replace("#validatorName#", validatorNameUpdateDto).ToString();
+        //    streamWriter.WriteLine(clsName);
 
 
-                //using (StreamWriter streamWriter = new StreamWriter(Path.Combine(UtilityHelper.ApplicationValidationsPath, classNameUpdateDto + ".cs")))
-                //{
-                //    string clsName = sb.ToString().Replace("#className#", classNameUpdateDto).Replace("#validatorName#", validatorNameUpdateDto).ToString();
-                //    streamWriter.WriteLine(clsName);
+        //}
 
+        #endregion
 
-                //}
+        #region Mapping Classes
 
-                #endregion
+        using (StreamWriter streamWriter =
+            new StreamWriter(Path.Combine(ApplicationMappingPath, className + "Profile.cs")))
+        {
 
-                #region Mapping Classes
+            streamWriter.WriteLine("using System;");
+            streamWriter.WriteLine("using AutoMapper;");
+            streamWriter.WriteLine("using " + ApplicationNameSpace + ".Dtos;");
+            streamWriter.WriteLine("using " + DomainNameSpace + ".Entities;");
+            streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Mapping");
+            streamWriter.WriteLine("{");
+            streamWriter.WriteLine("\tpublic class " + className + "Profile : AutoMapper.Profile");
+            streamWriter.WriteLine("\t{");
 
-                using (StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(ApplicationMappingPath, className + "Profile.cs")))
-                {
+            streamWriter.WriteLine("\t\tpublic " + className + "Profile() {");
+            streamWriter.WriteLine("CreateMap<" + className + ", " + className + "ReadDto>().ReverseMap();");
+            streamWriter.WriteLine("CreateMap<" + className + ", " + className + "UpsertDto>().ReverseMap();");
+            streamWriter.WriteLine("CreateMap<" + className + "ReadDto, " + className +
+                                   "UpsertDto>().ReverseMap();");
+            //  streamWriter.WriteLine("CreateMap<" + className + ", " + className + "UpsertDto>().ReverseMap();");
+            streamWriter.WriteLine("\t}");
+            streamWriter.WriteLine("}");
+            streamWriter.WriteLine("}");
 
-                    streamWriter.WriteLine("using System;");
-                    streamWriter.WriteLine("using AutoMapper;");
-                    streamWriter.WriteLine("using " + ApplicationNameSpace + ".Dtos;");
-                    streamWriter.WriteLine("using " + DomainNameSpace + ".Entities;");
-                    streamWriter.WriteLine("namespace " + ApplicationNameSpace + ".Mapping");
-                    streamWriter.WriteLine("{");
-                    streamWriter.WriteLine("\tpublic class " + className + "Profile : AutoMapper.Profile");
-                    streamWriter.WriteLine("\t{");
-
-                    streamWriter.WriteLine("\t\tpublic " + className + "Profile() {");
-                    streamWriter.WriteLine("CreateMap<" + className + ", " + className + "ReadDto>().ReverseMap();");
-                    streamWriter.WriteLine("CreateMap<" + className + ", " + className + "UpsertDto>().ReverseMap();");
-                    streamWriter.WriteLine("CreateMap<" + className + "ReadDto, " + className +
-                                           "UpsertDto>().ReverseMap();");
-                    //  streamWriter.WriteLine("CreateMap<" + className + ", " + className + "UpsertDto>().ReverseMap();");
-                    streamWriter.WriteLine("\t}");
-                    streamWriter.WriteLine("}");
-                    streamWriter.WriteLine("}");
-
-                }
+        }
 
 
 
-                #endregion
+        #endregion
 
-                #region Appliucation Service Interface
+        #region Appliucation Service Interface
 
-                string keyType = "";
+        string keyType = "";
 
-                var pk = table.PrimaryKeys.FirstOrDefault();
-                if (pk != null)
-                {
-                    keyType = UtilityHelper.GetCsType(pk);
-                }
+        var pk = table.PrimaryKeys.FirstOrDefault();
+        if (pk != null)
+        {
+            keyType = UtilityHelper.GetCsType(pk);
+        }
 
-                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationServicesInterfacesPath,
-                    "I" + className + "Service.cs")))
-                {
-                    // Create the header for the class
-                    streamWriter.WriteLine("using " + DomainNameSpace + ".Common;");
-                    streamWriter.WriteLine("using " + DomainNameSpace + ".Entities;");
-                    streamWriter.WriteLine("using " + ApplicationNameSpace + ".Dtos;");
-                    streamWriter.WriteLine(@"
+        using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationServicesInterfacesPath,
+            "I" + className + "Service.cs")))
+        {
+            // Create the header for the class
+            streamWriter.WriteLine("using " + DomainNameSpace + ".Common;");
+            streamWriter.WriteLine("using " + DomainNameSpace + ".Entities;");
+            streamWriter.WriteLine("using " + ApplicationNameSpace + ".Dtos;");
+            streamWriter.WriteLine(@"
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -3682,26 +3717,26 @@ namespace " + ApplicationNameSpace + @".Services.Interfaces
    public partial interface I" + className + @"Service 
     {
         Task<Response<" + keyType + @">> AddAsync(" + className + @"UpsertDto " +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto);
+                                   UtilityHelper.FormatCamel(className) + @"UpsertDto);
         Task<Response<bool>> UpdateAsync(" + className + @"UpsertDto " + UtilityHelper.FormatCamel(className) +
-                                           @"UpsertDto);
+                                   @"UpsertDto);
         Task<Response<bool>> DeleteAsync(" + keyType + @" id);
         Task<Response<" + className + @"ReadDto>> GetByIdAsync(" + keyType + @" id);
         Task<Response<List<" + className + @"ReadDto>>> GetAllAsync(Expression<Func<" + className +
-                                           @", bool>> predicate = null,
+                                   @", bool>> predicate = null,
             Func<IQueryable<" + className + @">, IOrderedQueryable<" + className +
-                                           @">> orderBy = null, params Expression<Func<" + className +
-                                           @", object>>[] includes);
+                                   @">> orderBy = null, params Expression<Func<" + className +
+                                   @", object>>[] includes);
 
         Task<Response<PagedResult<" + className + @"ReadDto>>> GetPagedListAsync(Expression<Func<" + className +
-                                           @", bool>> predicate = null,
+                                   @", bool>> predicate = null,
             Func<IQueryable<" + className + @">, IOrderedQueryable<" + className +
-                                           @">> orderBy = null, int pageIndex = 0,
+                                   @">> orderBy = null, int pageIndex = 0,
             int pageSize = 10, params Expression<Func<" + className + @", object>>[] includes);
 
     }
 }"
-                    );
+            );
 
 
 
@@ -3711,21 +3746,21 @@ namespace " + ApplicationNameSpace + @".Services.Interfaces
 
 
 
-                }
+        }
 
-                #endregion
+        #endregion
 
-                #region Application Service Impelemtation
+        #region Application Service Impelemtation
 
-                var titleName = UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table);
+        var titleName = UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table);
 
-                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationServicesImplementationsPath,
-                    className + "Service.cs")))
-                {
-                    // Create the header for the class
+        using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationServicesImplementationsPath,
+            className + "Service.cs")))
+        {
+            // Create the header for the class
 
 
-                    streamWriter.WriteLine(@"
+            streamWriter.WriteLine(@"
 using AutoMapper;
 using " + ApplicationNameSpace + @".Dtos;
 using " + ApplicationNameSpace + @".Interfaces;
@@ -3757,52 +3792,52 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
         }
 ");
 
-                    #region Add
+            #region Add
 
 
 
 
-                    streamWriter.WriteLine(@"  public async Task<Response<" + keyType + @">> AddAsync(" + className +
-                                           @"UpsertDto  " + UtilityHelper.FormatCamel(className) + @"UpsertDto)
+            streamWriter.WriteLine(@"  public async Task<Response<" + keyType + @">> AddAsync(" + className +
+                                   @"UpsertDto  " + UtilityHelper.FormatCamel(className) + @"UpsertDto)
         {
             if (_permissionChecker.HasClaim(AppPermissions." + className + @".Create))
             {
                         " + className + @"UpsertDtoValidator dtoValidator = new " + className + @"UpsertDtoValidator();
 
                         ValidationResult validationResult = dtoValidator.Validate(" +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto);
+                                   UtilityHelper.FormatCamel(className) + @"UpsertDto);
 
                         if (validationResult != null && validationResult.IsValid == false)
                         {
                             return new Response<" + keyType +
-                                           @">(validationResult.Errors.Select(modelError => modelError.ErrorMessage).ToList());
+                                   @">(validationResult.Errors.Select(modelError => modelError.ErrorMessage).ToList());
                         }
                         else
                         {
 ");
-                    if (!string.IsNullOrEmpty(titleName))
-                    {
-                        streamWriter.WriteLine(@"
+            if (!string.IsNullOrEmpty(titleName))
+            {
+                streamWriter.WriteLine(@"
 
                             if (await _unitOfWork.Repository<I" + className + @"RepositoryAsync>()
                                 .AnyAsync(o => o." +
-                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                               ".ToUpper() == " +
-                                               UtilityHelper.FormatCamel(className) + "UpsertDto." +
-                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                               @".ToUpper()))
+                                       UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                       ".ToUpper() == " +
+                                       UtilityHelper.FormatCamel(className) + "UpsertDto." +
+                                       UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                       @".ToUpper()))
                             {
                                 return new Response<" + keyType + @">(string.Format(SD.ExistData, " +
-                                               UtilityHelper.FormatCamel(className) + @"UpsertDto." +
-                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @"));
+                                       UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                       UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @"));
                             }
 
 ");
-                    }
+            }
 
-                    streamWriter.WriteLine(className + @" " + UtilityHelper.FormatCamel(className) +
-                                           @" = _mapper.Map<" +
-                                           className + @">(" + UtilityHelper.FormatCamel(className) + @"UpsertDto);
+            streamWriter.WriteLine(className + @" " + UtilityHelper.FormatCamel(className) +
+                                   @" = _mapper.Map<" +
+                                   className + @">(" + UtilityHelper.FormatCamel(className) + @"UpsertDto);
 
                                 var addedEntity = await _unitOfWork.Repository<I" + className + @"RepositoryAsync>()
                                     .AddAsync(" + UtilityHelper.FormatCamel(className) + @");
@@ -3822,19 +3857,19 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                 }
 ");
 
-                    #endregion
+            #endregion
 
-                    #region Update
+            #region Update
 
-                    streamWriter.WriteLine(@"public async Task<Response<bool>> UpdateAsync(" + className +
-                                           @"UpsertDto " + UtilityHelper.FormatCamel(className) + @"UpsertDto)
+            streamWriter.WriteLine(@"public async Task<Response<bool>> UpdateAsync(" + className +
+                                   @"UpsertDto " + UtilityHelper.FormatCamel(className) + @"UpsertDto)
                 {
                     if (_permissionChecker.HasClaim(AppPermissions." + className + @".Edit))
                     {
                         " + className + @"UpsertDtoValidator dtoValidator = new " + className + @"UpsertDtoValidator();
 
                         ValidationResult validationResult = dtoValidator.Validate(" +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto);
+                                   UtilityHelper.FormatCamel(className) + @"UpsertDto);
 
                         if (validationResult != null && validationResult.IsValid == false)
                         {
@@ -3844,31 +3879,31 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                         {
 
                             if (await _unitOfWork.Repository<I" + className + @"RepositoryAsync>().AnyAsync(o => o." +
-                                           UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                           @".ToUpper() == " +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto." +
-                                           UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                           @".ToUpper() && o." +
-                                           UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) +
-                                           @" != " +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto." +
-                                           UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + @"))
+                                   UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                   @".ToUpper() == " +
+                                   UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                   UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                   @".ToUpper() && o." +
+                                   UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) +
+                                   @" != " +
+                                   UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                   UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + @"))
                             {
                                 return new Response<bool>(string.Format(SD.ExistData," +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto." +
-                                           UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @" ));
+                                   UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                   UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @" ));
                             }
                            
                                 var entityToUpdate = await _unitOfWork.Repository<I" + className +
-                                           @"RepositoryAsync>().FirstOrDefaultAsync(x => x." +
-                                           UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + " == " +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto." +
-                                           UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + @");
+                                   @"RepositoryAsync>().FirstOrDefaultAsync(x => x." +
+                                   UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + " == " +
+                                   UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                   UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + @");
 
                                 _mapper.Map(" + UtilityHelper.FormatCamel(className) + @"UpsertDto, entityToUpdate);
 
                                 await _unitOfWork.Repository<I" + className +
-                                           @"RepositoryAsync>().UpdateAsync(entityToUpdate);
+                                   @"RepositoryAsync>().UpdateAsync(entityToUpdate);
 
                                 int effectedRows = await _unitOfWork.CommitAsync();
                                 if (effectedRows != 0)
@@ -3885,11 +3920,11 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                 }
 ");
 
-                    #endregion
+            #endregion
 
-                    #region Delete
+            #region Delete
 
-                    streamWriter.WriteLine(@" public async Task<Response<bool>> DeleteAsync(" + keyType + @" id)
+            streamWriter.WriteLine(@" public async Task<Response<bool>> DeleteAsync(" + keyType + @" id)
                     {
                         if (_permissionChecker.HasClaim(AppPermissions." + className + @".Delete))
                         {
@@ -3908,59 +3943,59 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                     }
                 ");
 
-                    #endregion
+            #endregion
 
-                    #region GetByIdAsync
+            #region GetByIdAsync
 
-                    streamWriter.WriteLine(@" public async Task<Response<" + className + @"ReadDto>> GetByIdAsync(" +
-                                           keyType + @" id)
+            streamWriter.WriteLine(@" public async Task<Response<" + className + @"ReadDto>> GetByIdAsync(" +
+                                   keyType + @" id)
                     {
                         if (_permissionChecker.HasClaim(AppPermissions." + className + @".View))
                         {
                             var result = await _unitOfWork.Repository<I" + className +
-                                           @"RepositoryAsync>().GetAsync(id);
+                                   @"RepositoryAsync>().GetAsync(id);
 
                             return new Response<" + className + @"ReadDto>(_mapper.Map<" + className +
-                                           @"ReadDto>(result));
+                                   @"ReadDto>(result));
                         }
 
                         return new Response<" + className + @"ReadDto>(""not authorized"");
                     }
                 ");
 
-                    #endregion
+            #endregion
 
-                    #region GetAllAsync
+            #region GetAllAsync
 
-                    streamWriter.WriteLine(@" public async Task<Response<List<" + className +
-                                           @"ReadDto>>> GetAllAsync(Expression<Func<" + className +
-                                           @", bool>> predicate = null,
+            streamWriter.WriteLine(@" public async Task<Response<List<" + className +
+                                   @"ReadDto>>> GetAllAsync(Expression<Func<" + className +
+                                   @", bool>> predicate = null,
                             Func<IQueryable<" + className + @">, IOrderedQueryable<" + className +
-                                           @">> orderBy = null, params Expression<Func<" + className +
-                                           @", object>>[] includes)
+                                   @">> orderBy = null, params Expression<Func<" + className +
+                                   @", object>>[] includes)
                     {
                         if (_permissionChecker.HasClaim(AppPermissions." + className + @".List))
                         {
                         var result = await _unitOfWork.Repository<I" + className +
-                                           @"RepositoryAsync>().GetAllAsync(predicate, orderBy, includes);
+                                   @"RepositoryAsync>().GetAllAsync(predicate, orderBy, includes);
                         return new Response<List<" + className + @"ReadDto>>(_mapper.Map<List<" + className +
-                                           @"ReadDto>>(result));
+                                   @"ReadDto>>(result));
                     }
 
                     return new Response<List<" + className + @"ReadDto>>(""not authorized"");
                 }
                 ");
 
-                    #endregion
+            #endregion
 
-                    #region GetAllAsync
+            #region GetAllAsync
 
-                    streamWriter.WriteLine(@" public async Task<Response<PagedResult<" + className +
-                                           @"ReadDto>>> GetPagedListAsync(Expression<Func<" + className +
-                                           @", bool>> predicate = null,
+            streamWriter.WriteLine(@" public async Task<Response<PagedResult<" + className +
+                                   @"ReadDto>>> GetPagedListAsync(Expression<Func<" + className +
+                                   @", bool>> predicate = null,
                             Func<IQueryable<" + className + @">, IOrderedQueryable<" + className +
-                                           @">> orderBy = null, int pageIndex = 0, int pageSize = 10, params Expression<Func<" +
-                                           className + @", object>>[] includes)
+                                   @">> orderBy = null, int pageIndex = 0, int pageSize = 10, params Expression<Func<" +
+                                   className + @", object>>[] includes)
                     {
                         if (_permissionChecker.HasClaim(AppPermissions." + className + @".List))
                         {
@@ -3968,7 +4003,7 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                             var pagedResult = new PagedResult<" + className + @"ReadDto>();
 
                             var result = await _unitOfWork.Repository<I" + className +
-                                           @"RepositoryAsync>().GetPagedListAsync(predicate, orderBy, pageIndex, pageSize, includes);
+                                   @"RepositoryAsync>().GetPagedListAsync(predicate, orderBy, pageIndex, pageSize, includes);
                             if (result != null)
                             {
                                 pagedResult.TotalCount = result.TotalCount;
@@ -3987,25 +4022,25 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                     }
                 ");
 
-                    #endregion
+            #endregion
 
-                    streamWriter.WriteLine("}}");
-                }
+            streamWriter.WriteLine("}}");
+        }
 
-                #endregion
-
-
-            }
-
-            #region Application Dependency Injection
+        #endregion
 
 
+    }
 
-            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationPath, "DependencyInjection.cs")))
-            {
-                // Create the header for the class
+    #region Application Dependency Injection
 
-                streamWriter.WriteLine(@"
+
+
+    using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApplicationPath, "DependencyInjection.cs")))
+    {
+        // Create the header for the class
+
+        streamWriter.WriteLine(@"
 
 using " + ApplicationNameSpace + @".Services.Implementations;
 using " + ApplicationNameSpace + @".Services.Interfaces;
@@ -4026,14 +4061,14 @@ namespace " + ApplicationNameSpace + @"
 
 
 ");
-                var className = "";
-                foreach (Table table in tableList)
-                {
-                    className = UtilityHelper.MakeSingular(table.Name);
-                    streamWriter.WriteLine("services.AddTransient<I" + className + "Service, " + className + "Service>();");
-                }
+        var className = "";
+        foreach (Table table in tableList)
+        {
+            className = UtilityHelper.MakeSingular(table.Name);
+            streamWriter.WriteLine("services.AddTransient<I" + className + "Service, " + className + "Service>();");
+        }
 
-                streamWriter.WriteLine(@"
+        streamWriter.WriteLine(@"
            
 
 
@@ -4041,7 +4076,7 @@ namespace " + ApplicationNameSpace + @"
         }
     }
 }"
-                );
+        );
 
 
 
@@ -4051,25 +4086,25 @@ namespace " + ApplicationNameSpace + @"
 
 
 
-            }
-            #endregion
+    }
+    #endregion
 
 
 
 
-        }
+}
 
-        private static void CreateAPIClasses()
-        {
+private static void CreateAPIClasses()
+{
 
-            #region Common Classes
+    #region Common Classes
 
-            #region Exception Handler Middleware Class
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApiMiddlewarePath, "ExceptionHandlerMiddleware.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    #region Exception Handler Middleware Class
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApiMiddlewarePath, "ExceptionHandlerMiddleware.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
                                           using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -4145,16 +4180,16 @@ namespace " + ApiNameSpace + @".Middleware
                                         ");
 
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region MiddlewareExtensions Class
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApiMiddlewarePath, "MiddlewareExtensions.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    #region MiddlewareExtensions Class
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApiMiddlewarePath, "MiddlewareExtensions.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using Microsoft.AspNetCore.Builder;
 
 namespace " + ApiNameSpace + @".Middleware
@@ -4170,16 +4205,16 @@ namespace " + ApiNameSpace + @".Middleware
                                         ");
 
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region BaseApiController Class
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApiInfrastructurePath, "BaseApiController.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    #region BaseApiController Class
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApiInfrastructurePath, "BaseApiController.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -4203,17 +4238,17 @@ namespace " + ApiNameSpace + @".Infrastructure
 ");
 
 
-            }
+    }
 
 
-            #endregion
+    #endregion
 
-            #region Filters Class
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApiFiltersPath, "Filters.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    #region Filters Class
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApiFiltersPath, "Filters.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
                                            using " + DomainNameSpace + @".Models;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Logging;
@@ -4317,16 +4352,16 @@ namespace " + ApiNameSpace + @".Filters
                                         ");
 
 
-            }
+    }
 
-            #endregion
+    #endregion
 
-            #region Program Class
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApiPath, "Program.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    #region Program Class
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApiPath, "Program.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -4391,18 +4426,18 @@ namespace " + ApiNameSpace + @"
 ");
 
 
-            }
+    }
 
 
-            #endregion
+    #endregion
 
 
-            #region Startup Class
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApiPath, "Startup.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    #region Startup Class
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApiPath, "Startup.cs")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 using " + ApiNameSpace + @".Filters;
 using " + ApiNameSpace + @".Middleware;
 using " + ApplicationNameSpace + @";
@@ -4526,18 +4561,18 @@ namespace " + ApiNameSpace + @"
             ");
 
 
-            }
+    }
 
 
-            #endregion
+    #endregion
 
-            #region AppSetting Class
+    #region AppSetting Class
 
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(ApiPath, "appsettings.json")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(@"
+    using (StreamWriter streamWriter =
+        new StreamWriter(Path.Combine(ApiPath, "appsettings.json")))
+    {
+        // Create the header for the class
+        streamWriter.WriteLine(@"
 {
   ""ConnectionStrings"": {
     ""DefaultConnection"": ""Server=(localdb)\\mssqllocaldb;Database=" + _appSetting.DataBase + @";Trusted_Connection=True;MultipleActiveResultSets=true""
@@ -4589,34 +4624,34 @@ namespace " + ApiNameSpace + @"
 ");
 
 
-            }
+    }
 
 
-            #endregion
-
-
-
-
-            #endregion
-
-
-            foreach (Table table in tableList)
-            {
-                var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
-
-                string className = "";
+    #endregion
 
 
 
-                #region  Model Classes
-                className = UtilityHelper.MakeSingular(table.Name);
 
-                string Camel_className = UtilityHelper.FormatCamel(className);
+    #endregion
 
-                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApiControllersPath, className + "Controller.cs")))
-                {
 
-                    streamWriter.WriteLine(@"
+    foreach (Table table in tableList)
+    {
+        var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
+
+        string className = "";
+
+
+
+        #region  Model Classes
+        className = UtilityHelper.MakeSingular(table.Name);
+
+        string Camel_className = UtilityHelper.FormatCamel(className);
+
+        using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApiControllersPath, className + "Controller.cs")))
+        {
+
+            streamWriter.WriteLine(@"
 using " + ApiNameSpace + @".Infrastructure;
 using " + ApplicationNameSpace + @".Dtos;
 using " + ApplicationNameSpace + @".Services.Interfaces;
@@ -4631,7 +4666,7 @@ using System.Linq;
 using System.Threading.Tasks;");
 
 
-                    streamWriter.WriteLine(@"
+            streamWriter.WriteLine(@"
 namespace " + ApiNameSpace + @".Controllers
 {
     [ApiVersion(""1.0"")]
@@ -4781,17 +4816,17 @@ namespace " + ApiNameSpace + @".Controllers
 
 ");
 
-                }
-                #endregion
-
-
-            }
-
         }
-        private static void CreateResourceFile()
-        {
+        #endregion
 
-            string sqlTables = @"SELECT DISTINCT T.name AS TableName ,
+
+    }
+
+}
+private static void CreateResourceFile()
+{
+
+    string sqlTables = @"SELECT DISTINCT T.name AS TableName ,
        C.name AS ColumnName ,
 	   T.name+'_'+C.name AS TableColumnName
 FROM   sys.objects AS T
@@ -4800,90 +4835,90 @@ FROM   sys.objects AS T
 WHERE  T.type_desc = 'USER_TABLE' AND p.name <> 'sysname'
 ORDER BY T.name+'_'+C.name;";
 
-            //List<string> keysList = new List<string>();
-            Dictionary<string, string> keysList = new Dictionary<string, string>();
+    //List<string> keysList = new List<string>();
+    Dictionary<string, string> keysList = new Dictionary<string, string>();
 
-            SqlConnection connection = null;
-            try
-            {
-                connection = new SqlConnection(UtilityHelper.ConnectionString);
-                connection.Open();
+    SqlConnection connection = null;
+    try
+    {
+        connection = new SqlConnection(UtilityHelper.ConnectionString);
+        connection.Open();
 
-                // Get a list of the entities in the database
-                DataTable dataTable = new DataTable();
-                SqlDataAdapter dataAdapter = new SqlDataAdapter(sqlTables, connection);
-                dataAdapter.Fill(dataTable);
+        // Get a list of the entities in the database
+        DataTable dataTable = new DataTable();
+        SqlDataAdapter dataAdapter = new SqlDataAdapter(sqlTables, connection);
+        dataAdapter.Fill(dataTable);
 
-                // Process each table
-                foreach (DataRow dataRow in dataTable.Rows)
-                {
-                    keysList.Add((string)dataRow["TableColumnName"], (string)dataRow["ColumnName"]);
-                }
-
-            }
-            catch (Exception ex)
-            {
-
-            }
-            finally
-            {
-                if (connection != null)
-                    connection.Dispose();
-            }
-
-
-
-            #region Using FluentValidation
-            using (
-                ResXResourceWriter resx =
-                    new ResXResourceWriter(DomainResourcesPath + @"/DomainResource.resx"))
-            {
-
-                resx.AddResource("EmailAddress", "{PropertyName} is not a valid email address.");
-                resx.AddResource("Equal", "{PropertyName} should be equal to {0}");
-                resx.AddResource("GreaterThan", "{PropertyName} must be greater than {0}.");
-                resx.AddResource("GreaterThanOrEqual",
-                    "{PropertyName} must be greater than or equal to {0}.");
-                resx.AddResource("IsValidDateTime", "{PropertyName} is not in the correct format.");
-                resx.AddResource("Length", "{PropertyName} must be less than {1} characters.");
-                resx.AddResource("LessThan", "{PropertyName} must be less than {0}.");
-                resx.AddResource("LessThanOrEqual", "{PropertyName} must be less than or equal to {0}.");
-                resx.AddResource("NotEmpty", "{PropertyName} should not be empty.");
-                resx.AddResource("NotEqual", "{PropertyName} should not be equal to {0}.");
-                resx.AddResource("RegularExpression", "{PropertyName} is not in the correct format.");
-
-                foreach (var key in keysList)
-                {
-                    resx.AddResource(key.Key, UtilityHelper.FixName(key.Value));
-                }
-
-            }
-
-            using (
-                ResXResourceWriter resx =
-                    new ResXResourceWriter(DomainResourcesPath + @"/DomainResource.ar.resx"))
-            {
-
-                resx.AddResource("EmailAddress", "{PropertyName} البريد الإلكتروني غير صحيح.");
-                resx.AddResource("Equal", "{PropertyName} يجب ان تساوي {0}");
-                resx.AddResource("GreaterThan", "{PropertyName} يجب ان تكون أكبر من {0}.");
-                resx.AddResource("GreaterThanOrEqual", "{PropertyName} يجب ان تكون أكبر من أو تساوي {0}.");
-                resx.AddResource("IsValidDateTime", "{PropertyName} يجب أن يكون في الصغية الصحيحة.");
-                resx.AddResource("Length", "{PropertyName}  عدد الحروف يجب ان يكون  أصغر من{1}.");
-                resx.AddResource("LessThan", "{PropertyName} يجب أن يكون أقل من {0}.");
-                resx.AddResource("LessThanOrEqual", "{PropertyName} يجب أن يكون أقل أو يساوي {0}.");
-                resx.AddResource("NotEmpty", "{PropertyName} يجب أن يحتوي على قيمة.");
-                resx.AddResource("NotEqual", "{PropertyName} يجب أن لا يساوي {0}.");
-                resx.AddResource("RegularExpression", "{PropertyName} يجب أن يكون في الصغية الصحيحة.");
-
-                foreach (var key in keysList)
-                {
-                    resx.AddResource(key.Key, UtilityHelper.FixName(key.Value));
-                }
-            }
-            #endregion
-
+        // Process each table
+        foreach (DataRow dataRow in dataTable.Rows)
+        {
+            keysList.Add((string)dataRow["TableColumnName"], (string)dataRow["ColumnName"]);
         }
+
+    }
+    catch (Exception ex)
+    {
+
+    }
+    finally
+    {
+        if (connection != null)
+            connection.Dispose();
+    }
+
+
+
+    #region Using FluentValidation
+    using (
+        ResXResourceWriter resx =
+            new ResXResourceWriter(DomainResourcesPath + @"/DomainResource.resx"))
+    {
+
+        resx.AddResource("EmailAddress", "{PropertyName} is not a valid email address.");
+        resx.AddResource("Equal", "{PropertyName} should be equal to {0}");
+        resx.AddResource("GreaterThan", "{PropertyName} must be greater than {0}.");
+        resx.AddResource("GreaterThanOrEqual",
+            "{PropertyName} must be greater than or equal to {0}.");
+        resx.AddResource("IsValidDateTime", "{PropertyName} is not in the correct format.");
+        resx.AddResource("Length", "{PropertyName} must be less than {1} characters.");
+        resx.AddResource("LessThan", "{PropertyName} must be less than {0}.");
+        resx.AddResource("LessThanOrEqual", "{PropertyName} must be less than or equal to {0}.");
+        resx.AddResource("NotEmpty", "{PropertyName} should not be empty.");
+        resx.AddResource("NotEqual", "{PropertyName} should not be equal to {0}.");
+        resx.AddResource("RegularExpression", "{PropertyName} is not in the correct format.");
+
+        foreach (var key in keysList)
+        {
+            resx.AddResource(key.Key, UtilityHelper.FixName(key.Value));
+        }
+
+    }
+
+    using (
+        ResXResourceWriter resx =
+            new ResXResourceWriter(DomainResourcesPath + @"/DomainResource.ar.resx"))
+    {
+
+        resx.AddResource("EmailAddress", "{PropertyName} البريد الإلكتروني غير صحيح.");
+        resx.AddResource("Equal", "{PropertyName} يجب ان تساوي {0}");
+        resx.AddResource("GreaterThan", "{PropertyName} يجب ان تكون أكبر من {0}.");
+        resx.AddResource("GreaterThanOrEqual", "{PropertyName} يجب ان تكون أكبر من أو تساوي {0}.");
+        resx.AddResource("IsValidDateTime", "{PropertyName} يجب أن يكون في الصغية الصحيحة.");
+        resx.AddResource("Length", "{PropertyName}  عدد الحروف يجب ان يكون  أصغر من{1}.");
+        resx.AddResource("LessThan", "{PropertyName} يجب أن يكون أقل من {0}.");
+        resx.AddResource("LessThanOrEqual", "{PropertyName} يجب أن يكون أقل أو يساوي {0}.");
+        resx.AddResource("NotEmpty", "{PropertyName} يجب أن يحتوي على قيمة.");
+        resx.AddResource("NotEqual", "{PropertyName} يجب أن لا يساوي {0}.");
+        resx.AddResource("RegularExpression", "{PropertyName} يجب أن يكون في الصغية الصحيحة.");
+
+        foreach (var key in keysList)
+        {
+            resx.AddResource(key.Key, UtilityHelper.FixName(key.Value));
+        }
+    }
+    #endregion
+
+}
 
     }
 }
