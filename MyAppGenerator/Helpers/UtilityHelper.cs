@@ -79,7 +79,7 @@ namespace MyAppGenerator.Helpers
 
         public static string CreateMethodParameter(Column column)
         {
-            return GetCsType(column)  + " " + FormatCamel(column.Name); ;
+            return GetCsType(column) + " " + FormatCamel(column.Name); ;
 
         }
 
@@ -898,28 +898,37 @@ namespace MyAppGenerator.Helpers
 
                 sb.Append("builder.Property(t => t." + column.Name + ")");
                 sb.Append(".HasColumnName(\"" + column.Name + "\")");
-
-                if (column.Type == "char" || column.Type == "varchar" || column.Type == "nchar" || column.Type == "nvarchar")
+                if (column.Name.ToUpper() != "RowVersion".ToUpper())
                 {
-                    sb.Append(".HasColumnType(\"" + column.Type + (column.Length == "-1" ? "(max)" : "(" + column.Length + ")") + "\")");
-                    if (column.Type == "char" || column.Type == "varchar")
+                    if (column.Type == "char" || column.Type == "varchar" || column.Type == "nchar" ||
+                        column.Type == "nvarchar")
                     {
-                        sb.Append(".HasMaxLength" + (column.Length == "-1" ? "(8000)" : "(" + column.Length + ")"));
+                        sb.Append(".HasColumnType(\"" + column.Type +
+                                  (column.Length == "-1" ? "(max)" : "(" + column.Length + ")") + "\")");
+                        if (column.Type == "char" || column.Type == "varchar")
+                        {
+                            sb.Append(".HasMaxLength" + (column.Length == "-1" ? "(8000)" : "(" + column.Length + ")"));
+                        }
+                        else if (column.Type == "nchar" || column.Type == "nvarchar")
+                        {
+                            sb.Append(".HasMaxLength" + (column.Length == "-1" ? "(4000)" : "(" + column.Length + ")"));
+                        }
                     }
-                    else if (column.Type == "nchar" || column.Type == "nvarchar")
+                    else
                     {
-                        sb.Append(".HasMaxLength" + (column.Length == "-1" ? "(4000)" : "(" + column.Length + ")"));
+                        sb.Append(".HasColumnType(\"" + column.Type + "\")");
+                    }
+
+                    if (column.IsNullable == false)
+                    {
+                        sb.Append(".IsRequired()");
                     }
                 }
                 else
                 {
-                    sb.Append(".HasColumnType(\"" + column.Type + "\")");
+                    sb.Append(".IsConcurrencyToken().ValueGeneratedOnAddOrUpdate()");
                 }
 
-                if (column.IsNullable == false)
-                {
-                    sb.Append(".IsRequired()");
-                }
                 sb.Append(";");
             }
 
@@ -1166,6 +1175,13 @@ namespace MyAppGenerator.Helpers
             //    sb.Append("\t\t[Url(ErrorMessage = \"Invalid URL Address\")]");
             //}
 
+
+            if (propLower.Contains("rowversion"))
+            {
+                sb.AppendLine();
+                sb.Append("\t\t[Timestamp]");
+                sb.AppendLine();
+            }
             return sb.ToString();
 
         }
@@ -1407,7 +1423,7 @@ namespace MyAppGenerator.Helpers
         }
 
 
-        public static string GetEntityInterfaces(List<Column> columns,string idType)
+        public static string GetEntityInterfaces(List<Column> columns, string idType)
         {
             StringBuilder sb = new StringBuilder();
 

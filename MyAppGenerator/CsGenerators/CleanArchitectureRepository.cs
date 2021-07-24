@@ -1586,13 +1586,13 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
 
             #region AppClaims Initializer
 
-         
+
 
             using (
                 StreamWriter streamWriter =
                     new StreamWriter(Path.Combine(InfraDataInitializerPath, "AppClaimsInitializer.cs")))
             {
-          
+
                 // Create the header for the class
                 streamWriter.WriteLine(@"
 using " + DomainNameSpace + @".Entities;
@@ -1752,7 +1752,7 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
                        UserName = ""Belal"",
                        Email = ""admin@gmail.com"",
                        EmailConfirmed = true,
-
+                       FullName = ""Belal Badawy"",
 
 
                    }, ""Admin123$"").GetAwaiter().GetResult();
@@ -1761,35 +1761,39 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
 
                    var newRoleName = ""Admin"";
 
-                   roleManager.CreateAsync(new IdentityRole<Guid>(newRoleName)).GetAwaiter().GetResult();
+                    var existRole = roleManager.FindByNameAsync(newRoleName).GetAwaiter().GetResult();
+            if (existRole == null)
+            {
+                roleManager.CreateAsync(new IdentityRole<Guid>(newRoleName)).GetAwaiter().GetResult();
+            }
 
-                   var newRole = roleManager.FindByNameAsync(newRoleName).GetAwaiter().GetResult();
+            var newRole = (existRole != null ? existRole : roleManager.FindByNameAsync(newRoleName).GetAwaiter().GetResult());
 
-                   if (newRole != null)
-                   {
-                       List<AppClaim> existsAppClaims = new List<AppClaim>();
+            if (newRole != null)
+            {
+                List<AppClaim> existsAppClaims = new List<AppClaim>();
 
-                       existsAppClaims = db.AppClaims.ToListAsync().GetAwaiter().GetResult();
+                existsAppClaims = db.AppClaims.ToListAsync().GetAwaiter().GetResult();
 
-                       var claims = roleManager.GetClaimsAsync(newRole).GetAwaiter().GetResult();
+                var claims = roleManager.GetClaimsAsync(newRole).GetAwaiter().GetResult();
 
-                       foreach (var ca in existsAppClaims)
-                       {
-                           if (!string.IsNullOrEmpty(ca.ClaimTitle))
-                           {
-                               if (!claims.Any(o => o.Value.ToUpper() == ca.ClaimTitle.ToUpper()))
-                               {
-                                   roleManager.AddClaimAsync(newRole, new Claim(""permission"", ca.ClaimTitle.ToUpper())).GetAwaiter().GetResult();
-                               }
-                           }
-                       }
-                   }
-
-                   userManager.AddToRoleAsync(user, newRoleName).GetAwaiter().GetResult();
-               }
+                foreach (var ca in existsAppClaims)
+                {
+                    if (!string.IsNullOrEmpty(ca.ClaimTitle))
+                    {
+                        if (!claims.Any(o => o.Value.ToUpper() == ca.ClaimTitle.ToUpper()))
+                        {
+                            roleManager.AddClaimAsync(newRole, new Claim(""permission"", ca.ClaimTitle.ToUpper())).GetAwaiter().GetResult();
             }
         }
     }
+}
+
+userManager.AddToRoleAsync(user, newRoleName).GetAwaiter().GetResult();
+}
+
+}
+}
 
 ");
 
@@ -1898,6 +1902,12 @@ namespace " + DataAccessNameSpace + @".Data
 
                 foreach (Table table in tableList)
                 {
+
+                    if (table.Columns.Any(o => o.Name.ToUpper() == "RowVersion".ToUpper()))
+                    {
+                        streamWriter.WriteLine("modelBuilder.Entity<" + UtilityHelper.MakeSingular(table.Name) + ">().Property(p => p.RowVersion).IsRowVersion();");
+                    }
+
                     streamWriter.WriteLine(" // modelBuilder.ApplyConfiguration(new " + table.Name + "Configuration());");
                 }
 
@@ -1921,7 +1931,9 @@ namespace " + DataAccessNameSpace + @".Data
                 streamWriter.WriteLine(@"public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
 
-            string userId = _httpContextAccessor?.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+           // string userId = _httpContextAccessor?.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            string userId = _httpContextAccessor?.HttpContext?.User.FindFirstValue(ClaimTypes.Sid);
 
             foreach (var entry in ChangeTracker.Entries<IAuditable>())
             {
@@ -2513,13 +2525,13 @@ namespace " + DataAccessNameSpace + @".Extensions
                 // Create the header for the class
                 streamWriter.WriteLine(@"
 
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using " + ApplicationNameSpace + @".Interfaces;
 using " + DomainNameSpace + @".Common;
 using " + DomainNameSpace + @".Entities;
 using " + DomainNameSpace + @".Models;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -2531,12 +2543,13 @@ using System.Threading.Tasks;
 
 namespace " + DataAccessNameSpace + @".Identity.Services
 {
-   public class AuthService : IAuthService
+ public class AuthService : IAuthService
     {
         public Guid? UserId => null;
 
 
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole<Guid>> _roleManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly JwtSettings _jwtSettings;
 
@@ -2544,12 +2557,14 @@ namespace " + DataAccessNameSpace + @".Identity.Services
         public AuthService(
             UserManager<ApplicationUser> userManager,
             IOptions<JwtSettings> jwtSettings,
-            SignInManager<ApplicationUser> signInManager
+            SignInManager<ApplicationUser> signInManager,
+            RoleManager<IdentityRole<Guid>> roleManager
             )
         {
             _userManager = userManager;
             _jwtSettings = jwtSettings.Value;
             _signInManager = signInManager;
+            _roleManager = roleManager;
         }
 
         public async Task<Response<AuthenticationResponse>> AuthenticateAsync(LoginModel loginModel)
@@ -2558,8 +2573,8 @@ namespace " + DataAccessNameSpace + @".Identity.Services
 
             if (user == null)
             {
-              //  throw new Exception($""User with { loginModel.Email } not found."");
-              return new Response<AuthenticationResponse>($""User with {loginModel.Email} not found."");
+                //  throw new Exception($""User with { loginModel.Email } not found."");
+                return new Response<AuthenticationResponse>($""User with {loginModel.Email} not found."");
             }
 
             var result = await _signInManager.PasswordSignInAsync(user.UserName, loginModel.Password, false, lockoutOnFailure: false);
@@ -2616,16 +2631,39 @@ namespace " + DataAccessNameSpace + @".Identity.Services
 
         private async Task<JwtSecurityToken> GenerateToken(ApplicationUser user)
         {
-            var userClaims = await _userManager.GetClaimsAsync(user);
-            var roles = await _userManager.GetRolesAsync(user);
-
             var roleClaims = new List<Claim>();
 
-            userClaims.Add(new Claim(CustomClaimTypes.Permission, AppPermissions.AppClaim.List));
+             roleClaims.Add(new Claim(ClaimTypes.Sid, user.Id.ToString()));
+
+            var userClaims = await _userManager.GetClaimsAsync(user);
+
+            if (userClaims != null && userClaims.Count > 0)
+            {
+                foreach (var uc in userClaims)
+                {
+                    roleClaims.Add(new Claim(CustomClaimTypes.Permission, uc.Value));
+                }
+            }
+
+
+            var roles = await _userManager.GetRolesAsync(user);
+
 
             for (int i = 0; i < roles.Count; i++)
             {
                 roleClaims.Add(new Claim(""roles"", roles[i]));
+                var role = await _roleManager.FindByNameAsync(roles[i]);
+                if (role != null)
+                {
+                    var _roleClaims = await _roleManager.GetClaimsAsync(role);
+                    if (_roleClaims != null && _roleClaims.Count > 0)
+                    {
+                        foreach (var c in _roleClaims)
+                        {
+                            roleClaims.Add(new Claim(CustomClaimTypes.Permission, c.Value));
+                        }
+                    }
+                }
             }
 
             var claims = new[]
@@ -4676,12 +4714,13 @@ namespace " + ApiNameSpace + @"
         app.UseRouting();
 
         app.UseAuthorization();
+        app.UseAuthentication();
 
         app.UseCustomExceptionHandler();
 
         app.UseCors(""Open"");
 
-        app.UseAuthorization();
+     
 
         app.UseEndpoints(endpoints =>
         {
@@ -4875,25 +4914,25 @@ namespace  " + ApiNameSpace + @".Controllers
             }
 
 
-#endregion
+            #endregion
 
-foreach (Table table in tableList)
-{
-    var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
+            foreach (Table table in tableList)
+            {
+                var nodeType = tables.FirstOrDefault(o => o.Title == table.Name);
 
-    string className = "";
+                string className = "";
 
 
 
-    #region  Model Classes
-    className = UtilityHelper.MakeSingular(table.Name);
+                #region  Model Classes
+                className = UtilityHelper.MakeSingular(table.Name);
 
-    string Camel_className = UtilityHelper.FormatCamel(className);
+                string Camel_className = UtilityHelper.FormatCamel(className);
 
-    using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApiControllersPath, className + "Controller.cs")))
-    {
+                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(ApiControllersPath, className + "Controller.cs")))
+                {
 
-        streamWriter.WriteLine(@"
+                    streamWriter.WriteLine(@"
 using " + ApiNameSpace + @".Infrastructure;
 using " + ApplicationNameSpace + @".Dtos;
 using " + ApplicationNameSpace + @".Services.Interfaces;
@@ -4908,7 +4947,7 @@ using System.Linq;
 using System.Threading.Tasks;");
 
 
-        streamWriter.WriteLine(@"
+                    streamWriter.WriteLine(@"
 namespace " + ApiNameSpace + @".Controllers
 {
     [ApiVersion(""1.0"")]
@@ -4940,7 +4979,7 @@ namespace " + ApiNameSpace + @".Controllers
             return Ok(await _" + Camel_className + @"Service.GetPagedListAsync(null, (o => o.OrderBy(x => x.DisplayOrder)), pageIndex, pageSize));
         }
         
-        [HttpGet(""{id:Guid}"", Name = """+"GetById"+ className + @""")]
+        [HttpGet(""{id:Guid}"", Name = """ + "GetById" + className + @""")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(" + className + @"ReadDto))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
@@ -5058,17 +5097,17 @@ namespace " + ApiNameSpace + @".Controllers
 
 ");
 
-    }
-    #endregion
+                }
+                #endregion
 
 
-}
+            }
 
-}
-private static void CreateResourceFile()
-{
+        }
+        private static void CreateResourceFile()
+        {
 
-    string sqlTables = @"SELECT DISTINCT T.name AS TableName ,
+            string sqlTables = @"SELECT DISTINCT T.name AS TableName ,
        C.name AS ColumnName ,
 	   T.name+'_'+C.name AS TableColumnName
 FROM   sys.objects AS T
@@ -5077,90 +5116,90 @@ FROM   sys.objects AS T
 WHERE  T.type_desc = 'USER_TABLE' AND p.name <> 'sysname'
 ORDER BY T.name+'_'+C.name;";
 
-    //List<string> keysList = new List<string>();
-    Dictionary<string, string> keysList = new Dictionary<string, string>();
+            //List<string> keysList = new List<string>();
+            Dictionary<string, string> keysList = new Dictionary<string, string>();
 
-    SqlConnection connection = null;
-    try
-    {
-        connection = new SqlConnection(UtilityHelper.ConnectionString);
-        connection.Open();
+            SqlConnection connection = null;
+            try
+            {
+                connection = new SqlConnection(UtilityHelper.ConnectionString);
+                connection.Open();
 
-        // Get a list of the entities in the database
-        DataTable dataTable = new DataTable();
-        SqlDataAdapter dataAdapter = new SqlDataAdapter(sqlTables, connection);
-        dataAdapter.Fill(dataTable);
+                // Get a list of the entities in the database
+                DataTable dataTable = new DataTable();
+                SqlDataAdapter dataAdapter = new SqlDataAdapter(sqlTables, connection);
+                dataAdapter.Fill(dataTable);
 
-        // Process each table
-        foreach (DataRow dataRow in dataTable.Rows)
-        {
-            keysList.Add((string)dataRow["TableColumnName"], (string)dataRow["ColumnName"]);
+                // Process each table
+                foreach (DataRow dataRow in dataTable.Rows)
+                {
+                    keysList.Add((string)dataRow["TableColumnName"], (string)dataRow["ColumnName"]);
+                }
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+            finally
+            {
+                if (connection != null)
+                    connection.Dispose();
+            }
+
+
+
+            #region Using FluentValidation
+            using (
+                ResXResourceWriter resx =
+                    new ResXResourceWriter(DomainResourcesPath + @"/DomainResource.resx"))
+            {
+
+                resx.AddResource("EmailAddress", "{PropertyName} is not a valid email address.");
+                resx.AddResource("Equal", "{PropertyName} should be equal to {0}");
+                resx.AddResource("GreaterThan", "{PropertyName} must be greater than {0}.");
+                resx.AddResource("GreaterThanOrEqual",
+                    "{PropertyName} must be greater than or equal to {0}.");
+                resx.AddResource("IsValidDateTime", "{PropertyName} is not in the correct format.");
+                resx.AddResource("Length", "{PropertyName} must be less than {1} characters.");
+                resx.AddResource("LessThan", "{PropertyName} must be less than {0}.");
+                resx.AddResource("LessThanOrEqual", "{PropertyName} must be less than or equal to {0}.");
+                resx.AddResource("NotEmpty", "{PropertyName} should not be empty.");
+                resx.AddResource("NotEqual", "{PropertyName} should not be equal to {0}.");
+                resx.AddResource("RegularExpression", "{PropertyName} is not in the correct format.");
+
+                foreach (var key in keysList)
+                {
+                    resx.AddResource(key.Key, UtilityHelper.FixName(key.Value));
+                }
+
+            }
+
+            using (
+                ResXResourceWriter resx =
+                    new ResXResourceWriter(DomainResourcesPath + @"/DomainResource.ar.resx"))
+            {
+
+                resx.AddResource("EmailAddress", "{PropertyName} البريد الإلكتروني غير صحيح.");
+                resx.AddResource("Equal", "{PropertyName} يجب ان تساوي {0}");
+                resx.AddResource("GreaterThan", "{PropertyName} يجب ان تكون أكبر من {0}.");
+                resx.AddResource("GreaterThanOrEqual", "{PropertyName} يجب ان تكون أكبر من أو تساوي {0}.");
+                resx.AddResource("IsValidDateTime", "{PropertyName} يجب أن يكون في الصغية الصحيحة.");
+                resx.AddResource("Length", "{PropertyName}  عدد الحروف يجب ان يكون  أصغر من{1}.");
+                resx.AddResource("LessThan", "{PropertyName} يجب أن يكون أقل من {0}.");
+                resx.AddResource("LessThanOrEqual", "{PropertyName} يجب أن يكون أقل أو يساوي {0}.");
+                resx.AddResource("NotEmpty", "{PropertyName} يجب أن يحتوي على قيمة.");
+                resx.AddResource("NotEqual", "{PropertyName} يجب أن لا يساوي {0}.");
+                resx.AddResource("RegularExpression", "{PropertyName} يجب أن يكون في الصغية الصحيحة.");
+
+                foreach (var key in keysList)
+                {
+                    resx.AddResource(key.Key, UtilityHelper.FixName(key.Value));
+                }
+            }
+            #endregion
+
         }
-
-    }
-    catch (Exception ex)
-    {
-
-    }
-    finally
-    {
-        if (connection != null)
-            connection.Dispose();
-    }
-
-
-
-    #region Using FluentValidation
-    using (
-        ResXResourceWriter resx =
-            new ResXResourceWriter(DomainResourcesPath + @"/DomainResource.resx"))
-    {
-
-        resx.AddResource("EmailAddress", "{PropertyName} is not a valid email address.");
-        resx.AddResource("Equal", "{PropertyName} should be equal to {0}");
-        resx.AddResource("GreaterThan", "{PropertyName} must be greater than {0}.");
-        resx.AddResource("GreaterThanOrEqual",
-            "{PropertyName} must be greater than or equal to {0}.");
-        resx.AddResource("IsValidDateTime", "{PropertyName} is not in the correct format.");
-        resx.AddResource("Length", "{PropertyName} must be less than {1} characters.");
-        resx.AddResource("LessThan", "{PropertyName} must be less than {0}.");
-        resx.AddResource("LessThanOrEqual", "{PropertyName} must be less than or equal to {0}.");
-        resx.AddResource("NotEmpty", "{PropertyName} should not be empty.");
-        resx.AddResource("NotEqual", "{PropertyName} should not be equal to {0}.");
-        resx.AddResource("RegularExpression", "{PropertyName} is not in the correct format.");
-
-        foreach (var key in keysList)
-        {
-            resx.AddResource(key.Key, UtilityHelper.FixName(key.Value));
-        }
-
-    }
-
-    using (
-        ResXResourceWriter resx =
-            new ResXResourceWriter(DomainResourcesPath + @"/DomainResource.ar.resx"))
-    {
-
-        resx.AddResource("EmailAddress", "{PropertyName} البريد الإلكتروني غير صحيح.");
-        resx.AddResource("Equal", "{PropertyName} يجب ان تساوي {0}");
-        resx.AddResource("GreaterThan", "{PropertyName} يجب ان تكون أكبر من {0}.");
-        resx.AddResource("GreaterThanOrEqual", "{PropertyName} يجب ان تكون أكبر من أو تساوي {0}.");
-        resx.AddResource("IsValidDateTime", "{PropertyName} يجب أن يكون في الصغية الصحيحة.");
-        resx.AddResource("Length", "{PropertyName}  عدد الحروف يجب ان يكون  أصغر من{1}.");
-        resx.AddResource("LessThan", "{PropertyName} يجب أن يكون أقل من {0}.");
-        resx.AddResource("LessThanOrEqual", "{PropertyName} يجب أن يكون أقل أو يساوي {0}.");
-        resx.AddResource("NotEmpty", "{PropertyName} يجب أن يحتوي على قيمة.");
-        resx.AddResource("NotEqual", "{PropertyName} يجب أن لا يساوي {0}.");
-        resx.AddResource("RegularExpression", "{PropertyName} يجب أن يكون في الصغية الصحيحة.");
-
-        foreach (var key in keysList)
-        {
-            resx.AddResource(key.Key, UtilityHelper.FixName(key.Value));
-        }
-    }
-    #endregion
-
-}
 
     }
 }
