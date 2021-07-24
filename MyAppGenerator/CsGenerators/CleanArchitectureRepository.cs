@@ -4140,13 +4140,13 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                     {
             if (exitRecord.Code.ToUpper() == " + UtilityHelper.FormatCamel(className) + "UpsertDto." + @"Code.ToUpper())
                         {
-                            return new Response<Guid>(string.Format(SD.ExistData, " + UtilityHelper.FormatCamel(className) + "UpsertDto." + @"Code));
+                            return new Response<bool>(string.Format(SD.ExistData, " + UtilityHelper.FormatCamel(className) + "UpsertDto." + @"Code));
                         }
 
  if (exitRecord." + UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + ".ToUpper() == " + UtilityHelper.FormatCamel(className) + @"UpsertDto." +
                                                UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @".ToUpper())
                         {
-                                return new Response<" + keyType + @">(string.Format(SD.ExistData, " +
+                                return new Response<bool>(string.Format(SD.ExistData, " +
                                                UtilityHelper.FormatCamel(className) + @"UpsertDto." +
                                                UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @"));
 }
