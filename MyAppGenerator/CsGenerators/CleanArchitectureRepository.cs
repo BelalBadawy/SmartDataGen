@@ -3188,7 +3188,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
+using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace " + DataAccessNameSpace + @"
 {
@@ -3282,16 +3284,22 @@ namespace " + DataAccessNameSpace + @"
 
                        o.Events = new JwtBearerEvents()
                        {
-                           OnAuthenticationFailed = c =>
+                           OnAuthenticationFailed = context =>
                            {
-                               c.NoResult();
-                               c.Response.StatusCode = 500;
-                               c.Response.ContentType = ""text/plain"";
-                               return c.Response.WriteAsync(c.Exception.ToString());
+                               context.Response.OnStarting(async () =>
+                               {
+                                   context.NoResult();
+                                   context.Response.Headers.Add(""Token-Expired"", ""true"");
+                                   context.Response.ContentType = ""text/plain"";
+                                   context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                                   await context.Response.WriteAsync(""Un-Authorized"");
+                               });
+
+                               return Task.CompletedTask;
                            },
                            OnChallenge = context =>
                            {
-                               context.HandleResponse();
+                                context.HandleResponse();
                                context.Response.StatusCode = 401;
                                context.Response.ContentType = ""application/json"";
                            // Ensure we always have an error and error description.
@@ -3302,7 +3310,8 @@ namespace " + DataAccessNameSpace + @"
 
 
                                var result = JsonConvert.SerializeObject(""401 Not authorized"");
-                               return context.Response.WriteAsync(result);
+                                context.Response.WriteAsync(result).Wait(); 
+                               return Task.CompletedTask;
                            },
                            OnForbidden = context =>
                            {
@@ -3986,7 +3995,10 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                         else
                         {
 ");
-                    if (!string.IsNullOrEmpty(titleName))
+
+                    var hasCodeColumn = table.Columns.Any(o => o.Name.ToUpper() == "CODE");
+
+                    if (!string.IsNullOrEmpty(titleName) && hasCodeColumn == false)
                     {
                         streamWriter.WriteLine(@"
 
@@ -4004,6 +4016,41 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                             }
 
 ");
+                    }
+
+
+                    if (!string.IsNullOrEmpty(titleName) && hasCodeColumn)
+                    {
+                        streamWriter.WriteLine(@"
+
+                            var exitRecord = await _unitOfWork.Repository<I" + className + @"RepositoryAsync>()
+                                .FirstOrDefaultAsync(o => o." +
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                               ".ToUpper() == " +
+                                               UtilityHelper.FormatCamel(className) + "UpsertDto." +
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                               @".ToUpper() ||
+                                       o.Code.ToUpper() == " + UtilityHelper.FormatCamel(className) + "UpsertDto." +
+                                               "Code.ToUpper()) ;");
+
+                        streamWriter.WriteLine(@"
+ if (exitRecord != null)
+                    {
+            if (exitRecord.Code.ToUpper() == " + UtilityHelper.FormatCamel(className) + "UpsertDto."+ @"Code.ToUpper())
+                        {
+                            return new Response<Guid>(string.Format(SD.ExistData, " + UtilityHelper.FormatCamel(className) + "UpsertDto." + @"Code));
+                        }
+
+ if (exitRecord."+ UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table)+ ".ToUpper() == "+UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                        UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @".ToUpper())
+                        {
+                                return new Response<" + keyType + @">(string.Format(SD.ExistData, " +
+                                               UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @"));
+}
+    }                       
+");
+                       
                     }
 
                     streamWriter.WriteLine(className + @" " + UtilityHelper.FormatCamel(className) +
@@ -4048,24 +4095,68 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                         }
                         else
                         {
+");
 
+                    if (!string.IsNullOrEmpty(titleName) && hasCodeColumn == false)
+                    {
+                        streamWriter.WriteLine(@"
                             if (await _unitOfWork.Repository<I" + className + @"RepositoryAsync>().AnyAsync(o => o." +
-                                           UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                           @".ToUpper() == " +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto." +
-                                           UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                           @".ToUpper() && o." +
-                                           UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) +
-                                           @" != " +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto." +
-                                           UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + @"))
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                               @".ToUpper() == " +
+                                               UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                               @".ToUpper() && o." +
+                                               UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) +
+                                               @" != " +
+                                               UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                               UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + @"))
                             {
                                 return new Response<bool>(string.Format(SD.ExistData," +
-                                           UtilityHelper.FormatCamel(className) + @"UpsertDto." +
-                                           UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @" ));
-                            }
-                           
-                                var entityToUpdate = await _unitOfWork.Repository<I" + className +
+                                               UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @" ));
+                            }");
+                    }
+
+                    if (!string.IsNullOrEmpty(titleName) && hasCodeColumn)
+                    {
+                        streamWriter.WriteLine(@"
+
+                            var exitRecord = await _unitOfWork.Repository<I" + className + @"RepositoryAsync>()
+                                .FirstOrDefaultAsync(o => (o." +
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                               ".ToUpper() == " +
+                                               UtilityHelper.FormatCamel(className) + "UpsertDto." +
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                               @".ToUpper() ||
+                                       o.Code.ToUpper() == " + UtilityHelper.FormatCamel(className) + "UpsertDto." +
+                                               "Code.ToUpper())  && o." +
+                                               UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) +
+                                               @" != " +
+                                               UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                               UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + @") ;");
+
+                        streamWriter.WriteLine(@"
+ if (exitRecord != null)
+                    {
+            if (exitRecord.Code.ToUpper() == " + UtilityHelper.FormatCamel(className) + "UpsertDto." + @"Code.ToUpper())
+                        {
+                            return new Response<Guid>(string.Format(SD.ExistData, " + UtilityHelper.FormatCamel(className) + "UpsertDto." + @"Code));
+                        }
+
+ if (exitRecord." + UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + ".ToUpper() == " + UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @".ToUpper())
+                        {
+                                return new Response<" + keyType + @">(string.Format(SD.ExistData, " +
+                                               UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @"));
+}
+    }                       
+");
+                    }
+
+
+                    streamWriter.WriteLine(@"
+                    var entityToUpdate = await _unitOfWork.Repository<I" + className +
                                            @"RepositoryAsync>().FirstOrDefaultAsync(x => x." +
                                            UtilityHelper.GetIDColumnNameForCheckExistInDataBase(table) + " == " +
                                            UtilityHelper.FormatCamel(className) + @"UpsertDto." +
