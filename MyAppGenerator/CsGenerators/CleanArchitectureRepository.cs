@@ -1756,6 +1756,7 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
 
 
                    }, ""Admin123$"").GetAwaiter().GetResult();
+ }
 
                    ApplicationUser user = db.ApplicationUsers.Where(u => u.Email == ""admin@gmail.com"").FirstOrDefault();
 
@@ -1786,7 +1787,7 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
                             roleManager.AddClaimAsync(newRole, new Claim(""permission"", ca.ClaimTitle.ToUpper())).GetAwaiter().GetResult();
             }
         }
-    }
+   
 }
 
 userManager.AddToRoleAsync(user, newRoleName).GetAwaiter().GetResult();
