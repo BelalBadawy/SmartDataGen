@@ -5324,7 +5324,7 @@ namespace " + ApiNameSpace + @".Controllers
     }
 }
 
-"));
+");
 
                 }
                 #endregion
