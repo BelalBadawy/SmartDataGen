@@ -5165,11 +5165,12 @@ namespace " + ApiNameSpace + @".Controllers
         string cacheKeyGetAll = ""Get_All_" + className + @""";
         private readonly I" + className + @"Service _" + Camel_className + @"Service;
         private readonly ILogger<" + className + @"Controller> _logger;
-
-        public " + className + @"Controller(I" + className + @"Service " + Camel_className + @"Service, ILogger<" + className + @"Controller> logger)
+         private readonly IMemoryCache _cache;
+        public " + className + @"Controller(I" + className + @"Service " + Camel_className + @"Service, ILogger<" + className + @"Controller> logger, IMemoryCache cache)
         {
             _" + Camel_className + @"Service = " + Camel_className + @"Service;
             _logger = logger;
+            _cache = cache;
             _logger.LogInformation($""Enter the {nameof(" + className + @"Controller)} controller"");
 
         }
