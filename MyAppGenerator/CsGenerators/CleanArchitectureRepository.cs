@@ -1757,6 +1757,7 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
 
 
                    }, ""Admin123$"").GetAwaiter().GetResult();
+ }
 
                    ApplicationUser user = db.ApplicationUsers.Where(u => u.Email == ""admin@gmail.com"").FirstOrDefault();
 
@@ -1787,7 +1788,7 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
                             roleManager.AddClaimAsync(newRole, new Claim(""permission"", ca.ClaimTitle.ToUpper())).GetAwaiter().GetResult();
             }
         }
-    }
+   
 }
 
 userManager.AddToRoleAsync(user, newRoleName).GetAwaiter().GetResult();
@@ -4037,12 +4038,12 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                         streamWriter.WriteLine(@"
  if (exitRecord != null)
                     {
-            if (exitRecord.Code.ToUpper() == " + UtilityHelper.FormatCamel(className) + "UpsertDto."+ @"Code.ToUpper())
+            if (exitRecord.Code.ToUpper() == " + UtilityHelper.FormatCamel(className) + "UpsertDto." + @"Code.ToUpper())
                         {
                             return new Response<Guid>(string.Format(SD.ExistData, " + UtilityHelper.FormatCamel(className) + "UpsertDto." + @"Code));
                         }
 
- if (exitRecord."+ UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table)+ ".ToUpper() == "+UtilityHelper.FormatCamel(className) + @"UpsertDto." +
+ if (exitRecord." + UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + ".ToUpper() == " + UtilityHelper.FormatCamel(className) + @"UpsertDto." +
                         UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) + @".ToUpper())
                         {
                                 return new Response<" + keyType + @">(string.Format(SD.ExistData, " +
@@ -4051,7 +4052,7 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
 }
     }                       
 ");
-                       
+
                     }
 
                     streamWriter.WriteLine(className + @" " + UtilityHelper.FormatCamel(className) +
@@ -4472,6 +4473,118 @@ namespace " + ApiNameSpace + @".Middleware
 
             #endregion
 
+            #region SwaggerBasicAuthMiddleware Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApiMiddlewarePath, "SwaggerBasicAuthMiddleware.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using System;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace " + ApiNameSpace + @".Middleware
+{
+
+ public class SwaggerBasicAuthMiddleware
+    {
+
+        private readonly RequestDelegate next;
+
+        public SwaggerBasicAuthMiddleware(RequestDelegate next)
+        {
+            this.next = next;
+        }
+
+        public async Task InvokeAsync(HttpContext context)
+        {
+            //Make sure we are hitting the swagger path, and not doing it locally as it just gets annoying :-)
+            //if (context.Request.Path.StartsWithSegments(""/swagger"") && !this.IsLocalRequest(context))
+            if (context.Request.Path.StartsWithSegments(""/swagger""))
+            {
+                string authHeader = context.Request.Headers[""Authorization""];
+                if (authHeader != null && authHeader.StartsWith(""Basic ""))
+                {
+                    // Get the encoded username and password
+                    var encodedUsernamePassword =
+                        authHeader.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries)[1]?.Trim();
+
+                    // Decode from Base64 to string
+                    var decodedUsernamePassword =
+                        Encoding.UTF8.GetString(Convert.FromBase64String(encodedUsernamePassword));
+
+                    // Split username and password
+                    var username = decodedUsernamePassword.Split(':', 2)[0];
+                    var password = decodedUsernamePassword.Split(':', 2)[1];
+
+                    // Check if login is correct
+                    if (IsAuthorized(username, password))
+                    {
+                        await next.Invoke(context);
+                        return;
+                    }
+                }
+
+                // Return authentication type (causes browser to show login dialog)
+                context.Response.Headers[""WWW-Authenticate""] = ""Basic"";
+
+                // Return unauthorized
+                context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            }
+            else
+            {
+                await next.Invoke(context);
+            }
+        }
+
+        public bool IsAuthorized(string username, string password)
+        {
+            // Check that username and password are correct
+            return username.Equals(""MinapharmUser"", StringComparison.InvariantCultureIgnoreCase)
+                   && password.Equals(""Min@pharmP@$$word2020"");
+        }
+
+        public bool IsLocalRequest(HttpContext context)
+        {
+            //Handle running using the Microsoft.AspNetCore.TestHost and the site being run entirely locally in memory without an actual TCP/IP connection
+            if (context.Connection.RemoteIpAddress == null && context.Connection.LocalIpAddress == null)
+            {
+                return true;
+            }
+
+            if (context.Connection.RemoteIpAddress.Equals(context.Connection.LocalIpAddress))
+            {
+                return true;
+            }
+
+            if (IPAddress.IsLoopback(context.Connection.RemoteIpAddress))
+            {
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    public static class SwaggerAuthorizeExtensions
+    {
+        public static IApplicationBuilder UseSwaggerAuthorized(this IApplicationBuilder builder)
+        {
+            return builder.UseMiddleware<SwaggerBasicAuthMiddleware>();
+        }
+    }  
+
+}
+                                        ");
+
+
+            }
+
+            #endregion
+
             #region BaseApiController Class
             using (StreamWriter streamWriter =
                 new StreamWriter(Path.Combine(ApiInfrastructurePath, "BaseApiController.cs")))
@@ -4795,9 +4908,12 @@ namespace " + ApiNameSpace + @"
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
+        }
+
+             app.UseSwaggerAuthorized();
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint(""/swagger/v1/swagger.json"", """ + ApiNameSpace + @" v1""));
-        }
+       
 
 
         dbInitializer.Initialize();
@@ -5036,7 +5152,9 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;");
+using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
+");
 
 
                     streamWriter.WriteLine(@"
@@ -5045,13 +5163,15 @@ namespace " + ApiNameSpace + @".Controllers
     [ApiVersion(""1.0"")]
     public class " + className + @"Controller : BaseApiController
     {
+        string cacheKeyGetAll = ""Get_All_" + className + @""";
         private readonly I" + className + @"Service _" + Camel_className + @"Service;
         private readonly ILogger<" + className + @"Controller> _logger;
-
-        public " + className + @"Controller(I" + className + @"Service " + Camel_className + @"Service, ILogger<" + className + @"Controller> logger)
+         private readonly IMemoryCache _cache;
+        public " + className + @"Controller(I" + className + @"Service " + Camel_className + @"Service, ILogger<" + className + @"Controller> logger, IMemoryCache cache)
         {
             _" + Camel_className + @"Service = " + Camel_className + @"Service;
             _logger = logger;
+            _cache = cache;
             _logger.LogInformation($""Enter the {nameof(" + className + @"Controller)} controller"");
 
         }
@@ -5061,7 +5181,22 @@ namespace " + ApiNameSpace + @".Controllers
         [ProducesResponseType(200, Type = typeof(List<" + className + @"ReadDto>))]
         public async Task<ActionResult> GetAll()
         {
-            return Ok(await _" + Camel_className + @"Service.GetAllAsync());
+
+           
+             Response<List<" + UtilityHelper.MakeSingular(table.Name) + @"ReadDto>> dataList = null;
+
+                    if (_cache.TryGetValue(cacheKeyGetAll, out dataList))
+                    {
+                        return Ok(dataList);
+                    }
+
+
+                    dataList = await _" + Camel_className + @"Service.GetAllAsync();
+
+                    _cache.Set(cacheKeyGetAll, dataList);
+
+                    return Ok(dataList);
+                 
         }
         
         [HttpGet]
@@ -5107,6 +5242,7 @@ namespace " + ApiNameSpace + @".Controllers
             {
                 if (response.Succeeded)
                 {
+                      _cache.Remove(cacheKeyGetAll);
                     return CreatedAtRoute( """ + "GetById" + className + @""", new { id = response.Data }, response.Data);
                 }
                 else
@@ -5139,6 +5275,7 @@ namespace " + ApiNameSpace + @".Controllers
             {
                 if (response.Succeeded)
                 {
+                    _cache.Remove(cacheKeyGetAll);
                     return NoContent();
                 }
                 else
@@ -5171,6 +5308,7 @@ namespace " + ApiNameSpace + @".Controllers
             {
                 if (response.Succeeded)
                 {
+                     _cache.Remove(cacheKeyGetAll);
                     return NoContent();
                 }
                 else
