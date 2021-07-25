@@ -5151,7 +5151,9 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;");
+using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
+");
 
 
                     streamWriter.WriteLine(@"
@@ -5160,6 +5162,7 @@ namespace " + ApiNameSpace + @".Controllers
     [ApiVersion(""1.0"")]
     public class " + className + @"Controller : BaseApiController
     {
+        string cacheKeyGetAll = ""Get_All_" + className + @""";
         private readonly I" + className + @"Service _" + Camel_className + @"Service;
         private readonly ILogger<" + className + @"Controller> _logger;
 
@@ -5176,7 +5179,22 @@ namespace " + ApiNameSpace + @".Controllers
         [ProducesResponseType(200, Type = typeof(List<" + className + @"ReadDto>))]
         public async Task<ActionResult> GetAll()
         {
-            return Ok(await _" + Camel_className + @"Service.GetAllAsync());
+
+           
+             Response<List<" + UtilityHelper.MakeSingular(table.Name) + @"ReadDto>> dataList = null;
+
+                    if (_cache.TryGetValue(cacheKeyGetAll, out dataList))
+                    {
+                        return Ok(dataList);
+                    }
+
+
+                    dataList = await _" + Camel_className + @"Service.GetAllAsync();
+
+                    _cache.Set(cacheKeyGetAll, dataList);
+
+                    return Ok(dataList);
+                 
         }
         
         [HttpGet]
@@ -5222,6 +5240,7 @@ namespace " + ApiNameSpace + @".Controllers
             {
                 if (response.Succeeded)
                 {
+                      _cache.Remove(cacheKeyGetAll);
                     return CreatedAtRoute( """ + "GetById" + className + @""", new { id = response.Data }, response.Data);
                 }
                 else
@@ -5254,6 +5273,7 @@ namespace " + ApiNameSpace + @".Controllers
             {
                 if (response.Succeeded)
                 {
+                    _cache.Remove(cacheKeyGetAll);
                     return NoContent();
                 }
                 else
@@ -5286,6 +5306,7 @@ namespace " + ApiNameSpace + @".Controllers
             {
                 if (response.Succeeded)
                 {
+                     _cache.Remove(cacheKeyGetAll);
                     return NoContent();
                 }
                 else
@@ -5302,7 +5323,7 @@ namespace " + ApiNameSpace + @".Controllers
     }
 }
 
-");
+"));
 
                 }
                 #endregion
