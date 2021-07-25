@@ -1577,6 +1577,7 @@ namespace " + DataAccessNameSpace + @".Data.Initializer
             }
         }
     }
+}
 
 ");
 
