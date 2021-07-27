@@ -894,11 +894,16 @@ namespace " + DomainNameSpace + @".Common
                                             using System;
                                             namespace " + DomainNameSpace + @".Models
                                             {
-                                              public class LoginModel
-                                                {
-                                                    public string Email { get; set; }
-                                                    public string Password { get; set; }
-                                                }
+                                             public class LoginModel
+    {
+        [Required]
+        [EmailAddress]
+        [MaxLength(100)]
+        public string Email { get; set; }
+        [Required]
+        [MaxLength(20)]
+        public string Password { get; set; }
+    }
                                             }
                                         ");
 
@@ -5068,7 +5073,7 @@ namespace  " + ApiNameSpace + @".Controllers
                 {
                     if (response.Succeeded)
                     {
-                        return Ok(response.Data);
+                        return Ok(response);
                     }
                     else
                     {
@@ -5099,7 +5104,7 @@ namespace  " + ApiNameSpace + @".Controllers
                 {
                     if (response.Succeeded)
                     {
-                        return Ok(response.Data);
+                        return Ok(response);
                     }
                     else
                     {
