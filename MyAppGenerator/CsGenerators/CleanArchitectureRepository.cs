@@ -1370,6 +1370,56 @@ namespace " + DataAccessNameSpace + @".Common
 
             #endregion
 
+
+            #region  InMemorySessionWrapper
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraCommonFolderPath, "InMemorySessionWrapper.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using " + ApplicationNameSpace + @".Interfaces;
+using System;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
+using System.Text;
+
+namespace " + DataAccessNameSpace + @".Common
+{
+   public class InMemorySessionWrapper : ISessionWrapper
+    {
+
+        private IHttpContextAccessor _httpContextAccessor;
+        public InMemorySessionWrapper(IHttpContextAccessor httpContextAccessor)
+        {
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        public T GetFromSession<T>(string key)
+        {
+            var value = _httpContextAccessor?.HttpContext?.Session.GetString(key);
+
+            return value == null ? default(T) : JsonConvert.DeserializeObject<T>(value);
+        }
+
+        public void RemoveFromSession(string key)
+        {
+            _httpContextAccessor?.HttpContext?.Session.Remove(key);
+        }
+
+        public void SetInSession<T>(string key, T value)
+        {
+            _httpContextAccessor?.HttpContext?.Session.SetString(key, JsonConvert.SerializeObject(value));
+        }
+    }
+}
+
+");
+
+            }
+
+            #endregion
             #endregion
 
             #region Data Classes
@@ -3246,7 +3296,7 @@ namespace " + DataAccessNameSpace + @"
                 services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
                 services.AddScoped<IPermissionChecker, PermissionChecker>();
                 services.AddScoped<IDbInitializer, DbInitializer>();
-
+                services.AddSingleton<ISessionWrapper, InMemorySessionWrapper>();
 
                 services.Configure<IdentityOptions>(opt =>
                 {
@@ -3268,10 +3318,19 @@ namespace " + DataAccessNameSpace + @"
 
                 services.AddAuthentication(options =>
                 {
+                    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
                     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                })
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+
+                }) .AddCookie(options =>
+                    {
+                        options.Cookie.HttpOnly = true;
+                        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                        options.LoginPath = ""/Account/Login"";
+                        options.AccessDeniedPath = ""/Account/AccessDenied"";
+                        options.SlidingExpiration = true;
+            })
                    .AddJwtBearer(o =>
                    {
                        o.RequireHttpsMetadata = false;
@@ -3659,6 +3718,30 @@ namespace " + ApplicationNameSpace + @".Interfaces
         Task<int> CommitAsync();
     }
 
+}
+");
+            }
+
+            #endregion
+
+
+            #region ISessionWrapper
+
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApplicationInterfacesPath, "ISessionWrapper.cs")))
+            {
+
+                streamWriter.WriteLine(@"
+using System;
+namespace " + ApplicationNameSpace + @".Interfaces
+{
+    public interface ISessionWrapper
+    {
+
+        public T GetFromSession<T>(string key);
+        public void SetInSession<T>(string key, T value);
+        public void RemoveFromSession(string key);
+    }
 }
 ");
             }
