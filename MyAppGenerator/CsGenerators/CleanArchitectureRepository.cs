@@ -63,7 +63,7 @@ namespace MyAppGenerator.CsGenerators
         public static string ApplicationServicesImplementationsPath { get; set; }
         public static string ApplicationServicesInterfacesPath { get; set; }
         public static string ApplicationValidationsPath { get; set; }
-
+        public static string ApplicationExtentionsPath { get; set; }
 
         #endregion
 
@@ -254,6 +254,12 @@ namespace MyAppGenerator.CsGenerators
 
             ApplicationValidationsPath = Path.Combine(ApplicationPath, "Validations");
             UtilityHelper.CreateSubDirectory(ApplicationValidationsPath, true);
+
+
+
+            ApplicationExtentionsPath = Path.Combine(ApplicationPath, "Extensions");
+            UtilityHelper.CreateSubDirectory(ApplicationExtentionsPath, true);
+
             #endregion
 
 
@@ -3481,8 +3487,75 @@ dotnet ef database drop --project ""BS.Infrastructure"" --startup-project ""BS.A
             StringBuilder sb = new StringBuilder();
 
 
+            #region  Extentions
 
+            #region BadRequestException
 
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApplicationExtentionsPath, "LinqExtensions.cs")))
+            {
+
+                streamWriter.WriteLine(@"
+using System;
+using System.Linq;
+using System.Linq.Expressions;
+using " + DomainNameSpace + @".Common;
+
+namespace " + ApplicationNameSpace + @".Exceptions
+{
+   public static class LinqExtensions
+    {
+        public static IQueryable<T> OrderByDynamic<T>(
+            this IQueryable<T> query,
+            string orderByMember,
+            DtOrderDir ascendingDirection)
+        {
+            var param = Expression.Parameter(typeof(T), ""c"");
+
+            var body = orderByMember.Split('.').Aggregate<string, Expression>(param, Expression.PropertyOrField);
+
+            var queryable = ascendingDirection == DtOrderDir.Asc ?
+                (IOrderedQueryable<T>)Queryable.OrderBy(query.AsQueryable(), (dynamic)Expression.Lambda(body, param)) :
+                (IOrderedQueryable<T>)Queryable.OrderByDescending(query.AsQueryable(), (dynamic)Expression.Lambda(body, param));
+
+            return queryable;
+        }
+
+        public static IQueryable<T> WhereDynamic<T>(
+            this IQueryable<T> sourceList, string query)
+        {
+
+            if (string.IsNullOrEmpty(query))
+            {
+                return sourceList;
+            }
+
+            try
+            {
+
+                var properties = typeof(T).GetProperties()
+                    .Where(x => x.CanRead && x.CanWrite && !x.GetGetMethod().IsVirtual);
+
+                //Expression
+                sourceList = sourceList.Where(c =>
+                    properties.Any(p => p.GetValue(c) != null && p.GetValue(c).ToString()
+                        .Contains(query, StringComparison.InvariantCultureIgnoreCase)));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            return sourceList;
+        }
+    }
+}
+");
+            }
+
+            #endregion
+
+            #endregion
             #region Exceptions Classes
 
             #region BadRequestException
@@ -4003,6 +4076,9 @@ namespace " + ApplicationNameSpace + @".Services.Interfaces
                                            @">> orderBy = null, int pageIndex = 0,
             int pageSize = 10, params Expression<Func<" + className + @", object>>[] includes);
 
+  Task<Response<PagedResult<" + className + @"ReadDto>>> GetPagedListAsync(string searchValue = null, string orderByColumn = null, bool orderAscendingDirection = true, int pageIndex = 0,
+            int pageSize = 10, params Expression<Func<" + className + @", object>>[] includes);
+
     }
 }"
                     );
@@ -4036,6 +4112,7 @@ using " + ApplicationNameSpace + @".Interfaces;
 using " + ApplicationNameSpace + @".Interfaces.Repositories;
 using " + ApplicationNameSpace + @".Services.Interfaces;
 using " + ApplicationNameSpace + @".Validations;
+using " + ApplicationNameSpace + @".Extensions;
 using " + DomainNameSpace + @".Common;
 using " + DomainNameSpace + @".Entities;
 using FluentValidation.Results;
@@ -4339,7 +4416,7 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
 
                     #endregion
 
-                    #region GetAllAsync
+                    #region GetPagedListAsync
 
                     streamWriter.WriteLine(@" public async Task<Response<PagedResult<" + className +
                                            @"ReadDto>>> GetPagedListAsync(Expression<Func<" + className +
@@ -4372,6 +4449,51 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                         return new Response<PagedResult<" + className + @"ReadDto>>(""not authorized"");
                     }
                 ");
+
+
+                    streamWriter.WriteLine(@" public async Task<Response<PagedResult<" + className +
+                                           @"ReadDto>>> GetPagedListAsync(string searchValue = null, string orderByColumn = null, bool orderAscendingDirection = true, int pageIndex = 0, int pageSize = 10, params Expression<Func<" +
+                                           className + @", object>>[] includes)
+                    {
+                        if (_permissionChecker.HasClaim(AppPermissions." + className + @".List))
+                        {
+
+                Expression<Func<" + className + @", bool>> predicate = null;
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    predicate = " + UtilityHelper.GetColumnNameForSearchInDatabase(table) + @"
+                }
+
+                Func<IQueryable<" + className + @">, IOrderedQueryable<" + className + @">> orderByFilter = null;
+
+                if (!string.IsNullOrEmpty(orderByColumn))
+                {
+                    orderByFilter = (o => (IOrderedQueryable<" + className + @">)o.OrderByDynamic(orderByColumn, (orderAscendingDirection ? DtOrderDir.Asc : DtOrderDir.Desc)));
+                }
+
+                            var pagedResult = new PagedResult<" + className + @"ReadDto>();
+
+                            var result = await _unitOfWork.Repository<I" + className +
+                                           @"RepositoryAsync>().GetPagedListAsync(predicate, orderByFilter, pageIndex, pageSize, includes);
+                            if (result != null)
+                            {
+                                pagedResult.TotalCount = result.TotalCount;
+                                pagedResult.FilteredTotalCount = result.FilteredTotalCount;
+
+                                if (result.Data != null && result.Data.Count > 0)
+                                {
+                                    pagedResult.Data = _mapper.Map<List<" + className + @"ReadDto>>(result.Data);
+                                }
+                            }
+
+                            return new Response<PagedResult<" + className + @"ReadDto>>(pagedResult);
+                        }
+
+                        return new Response<PagedResult<" + className + @"ReadDto>>(""not authorized"");
+                    }
+                ");
+
+
 
                     #endregion
 
@@ -5288,9 +5410,9 @@ namespace " + ApiNameSpace + @".Controllers
         
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(PagedResult<" + className + @"ReadDto>))]
-        public async Task<ActionResult> GetAllPagedList(int pageIndex, int pageSize)
+        public async Task<ActionResult> GetAllPagedList(string searchBy, string orderBy, bool orderAscendingDirection,int pageIndex, int pageSize)
         {
-            return Ok(await _" + Camel_className + @"Service.GetPagedListAsync(null, (o => o.OrderBy(x => x.DisplayOrder)), pageIndex, pageSize));
+            return Ok(await _" + Camel_className + @"Service.GetPagedListAsync(searchBy, orderBy, orderAscendingDirection, pageIndex, pageSize));
         }
         
         [HttpGet(""{id:Guid}"", Name = """ + "GetById" + className + @""")]
