@@ -2156,6 +2156,11 @@ namespace " + DataAccessNameSpace + @".Data
 
         public async Task<PagedResult<T>> GetPagedListAsync(Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, int pageIndex = 0, int pageSize = 10, params Expression<Func<T, object>>[] includes)
         {
+            if (pageIndex == 0)
+            {
+                pageIndex = 1;
+            }
+
             IQueryable<T> query = DbSet;
             query = query.AsNoTracking();
 
