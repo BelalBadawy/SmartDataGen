@@ -1378,6 +1378,51 @@ namespace MyAppGenerator.Helpers
             return System.Text.RegularExpressions.Regex.Replace(propName, "([A-Z])", " $1", System.Text.RegularExpressions.RegexOptions.Compiled).Trim();
         }
 
+        public static string GetColumnNameForSearchInDatabase(Table table)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            foreach (var c in table.Columns)
+            {
+                if (c.Name.ToLower().Contains("title"))
+                {
+                    sb.Append("o."+ c.Name+".Contains(searchValue) || ");
+                }
+
+                if (c.Name.ToLower().Contains("name"))
+                {
+                    sb.Append("o." + c.Name + ".Contains(searchValue) || ");
+                }
+
+                if (c.Name.ToLower().Contains("content"))
+                {
+                    sb.Append("o." + c.Name + ".Contains(searchValue) || ");
+                }
+
+                if (c.Name.ToLower().Contains("description"))
+                {
+                    sb.Append("o." + c.Name + ".Contains(searchValue) || ");
+                }
+                if (c.Name.ToLower().Contains("code"))
+                {
+                    sb.Append("o." + c.Name + ".Contains(searchValue) || ");
+                }
+                if (c.Name.ToLower().Contains("notes"))
+                {
+                    sb.Append("o." + c.Name + ".Contains(searchValue) || ");
+                }
+
+            }
+
+            if (sb.Length > 0)
+            {
+                return "(o => " + sb.ToString().Substring(0, sb.Length - 3) + ");";
+            }
+
+            return "";
+        }
+
+
         public static string GetColumnNameTitleForCheckExistInDataBase(Table table)
         {
             foreach (var c in table.Columns)
@@ -1401,7 +1446,14 @@ namespace MyAppGenerator.Helpers
                 {
                     return c.Name;
                 }
-
+                if (c.Name.ToLower().Contains("code"))
+                {
+                    return c.Name;
+                }
+                if (c.Name.ToLower().Contains("notes"))
+                {
+                    return c.Name;
+                }
 
             }
 

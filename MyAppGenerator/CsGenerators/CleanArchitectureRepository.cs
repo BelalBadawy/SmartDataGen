@@ -63,7 +63,7 @@ namespace MyAppGenerator.CsGenerators
         public static string ApplicationServicesImplementationsPath { get; set; }
         public static string ApplicationServicesInterfacesPath { get; set; }
         public static string ApplicationValidationsPath { get; set; }
-
+        public static string ApplicationExtentionsPath { get; set; }
 
         #endregion
 
@@ -254,6 +254,12 @@ namespace MyAppGenerator.CsGenerators
 
             ApplicationValidationsPath = Path.Combine(ApplicationPath, "Validations");
             UtilityHelper.CreateSubDirectory(ApplicationValidationsPath, true);
+
+
+
+            ApplicationExtentionsPath = Path.Combine(ApplicationPath, "Extensions");
+            UtilityHelper.CreateSubDirectory(ApplicationExtentionsPath, true);
+
             #endregion
 
 
@@ -894,11 +900,16 @@ namespace " + DomainNameSpace + @".Common
                                             using System;
                                             namespace " + DomainNameSpace + @".Models
                                             {
-                                              public class LoginModel
-                                                {
-                                                    public string Email { get; set; }
-                                                    public string Password { get; set; }
-                                                }
+                                             public class LoginModel
+    {
+        [Required]
+        [EmailAddress]
+        [MaxLength(100)]
+        public string Email { get; set; }
+        [Required]
+        [MaxLength(20)]
+        public string Password { get; set; }
+    }
                                             }
                                         ");
 
@@ -1365,6 +1376,56 @@ namespace " + DataAccessNameSpace + @".Common
 
             #endregion
 
+
+            #region  InMemorySessionWrapper
+
+            using (
+                StreamWriter streamWriter =
+                    new StreamWriter(Path.Combine(InfraCommonFolderPath, "InMemorySessionWrapper.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using " + ApplicationNameSpace + @".Interfaces;
+using System;
+using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
+using System.Text;
+
+namespace " + DataAccessNameSpace + @".Common
+{
+   public class InMemorySessionWrapper : ISessionWrapper
+    {
+
+        private IHttpContextAccessor _httpContextAccessor;
+        public InMemorySessionWrapper(IHttpContextAccessor httpContextAccessor)
+        {
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        public T GetFromSession<T>(string key)
+        {
+            var value = _httpContextAccessor?.HttpContext?.Session?.GetString(key);
+
+            return value == null ? default(T) : JsonConvert.DeserializeObject<T>(value);
+        }
+
+        public void RemoveFromSession(string key)
+        {
+            _httpContextAccessor?.HttpContext?.Session?.Remove(key);
+        }
+
+        public void SetInSession<T>(string key, T value)
+        {
+            _httpContextAccessor?.HttpContext?.Session?.SetString(key, JsonConvert.SerializeObject(value));
+        }
+    }
+}
+
+");
+
+            }
+
+            #endregion
             #endregion
 
             #region Data Classes
@@ -2096,6 +2157,11 @@ namespace " + DataAccessNameSpace + @".Data
 
         public async Task<PagedResult<T>> GetPagedListAsync(Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, int pageIndex = 0, int pageSize = 10, params Expression<Func<T, object>>[] includes)
         {
+            if (pageIndex == 0)
+            {
+                pageIndex = 1;
+            }
+
             IQueryable<T> query = DbSet;
             query = query.AsNoTracking();
 
@@ -3242,7 +3308,7 @@ namespace " + DataAccessNameSpace + @"
                 services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
                 services.AddScoped<IPermissionChecker, PermissionChecker>();
                 services.AddScoped<IDbInitializer, DbInitializer>();
-
+                services.AddSingleton<ISessionWrapper, InMemorySessionWrapper>();
 
                 services.Configure<IdentityOptions>(opt =>
                 {
@@ -3264,10 +3330,19 @@ namespace " + DataAccessNameSpace + @"
 
                 services.AddAuthentication(options =>
                 {
+                    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
                     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                })
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+
+                }) .AddCookie(options =>
+                    {
+                        options.Cookie.HttpOnly = true;
+                        options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                        options.LoginPath = ""/Account/Login"";
+                        options.AccessDeniedPath = ""/Account/AccessDenied"";
+                        options.SlidingExpiration = true;
+            })
                    .AddJwtBearer(o =>
                    {
                        o.RequireHttpsMetadata = false;
@@ -3418,8 +3493,75 @@ dotnet ef database drop --project ""BS.Infrastructure"" --startup-project ""BS.A
             StringBuilder sb = new StringBuilder();
 
 
+            #region  Extentions
 
+            #region BadRequestException
 
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApplicationExtentionsPath, "LinqExtensions.cs")))
+            {
+
+                streamWriter.WriteLine(@"
+using System;
+using System.Linq;
+using System.Linq.Expressions;
+using " + DomainNameSpace + @".Common;
+
+namespace " + ApplicationNameSpace + @".Exceptions
+{
+   public static class LinqExtensions
+    {
+        public static IQueryable<T> OrderByDynamic<T>(
+            this IQueryable<T> query,
+            string orderByMember,
+            DtOrderDir ascendingDirection)
+        {
+            var param = Expression.Parameter(typeof(T), ""c"");
+
+            var body = orderByMember.Split('.').Aggregate<string, Expression>(param, Expression.PropertyOrField);
+
+            var queryable = ascendingDirection == DtOrderDir.Asc ?
+                (IOrderedQueryable<T>)Queryable.OrderBy(query.AsQueryable(), (dynamic)Expression.Lambda(body, param)) :
+                (IOrderedQueryable<T>)Queryable.OrderByDescending(query.AsQueryable(), (dynamic)Expression.Lambda(body, param));
+
+            return queryable;
+        }
+
+        public static IQueryable<T> WhereDynamic<T>(
+            this IQueryable<T> sourceList, string query)
+        {
+
+            if (string.IsNullOrEmpty(query))
+            {
+                return sourceList;
+            }
+
+            try
+            {
+
+                var properties = typeof(T).GetProperties()
+                    .Where(x => x.CanRead && x.CanWrite && !x.GetGetMethod().IsVirtual);
+
+                //Expression
+                sourceList = sourceList.Where(c =>
+                    properties.Any(p => p.GetValue(c) != null && p.GetValue(c).ToString()
+                        .Contains(query, StringComparison.InvariantCultureIgnoreCase)));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+
+            return sourceList;
+        }
+    }
+}
+");
+            }
+
+            #endregion
+
+            #endregion
             #region Exceptions Classes
 
             #region BadRequestException
@@ -3655,6 +3797,30 @@ namespace " + ApplicationNameSpace + @".Interfaces
         Task<int> CommitAsync();
     }
 
+}
+");
+            }
+
+            #endregion
+
+
+            #region ISessionWrapper
+
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(ApplicationInterfacesPath, "ISessionWrapper.cs")))
+            {
+
+                streamWriter.WriteLine(@"
+using System;
+namespace " + ApplicationNameSpace + @".Interfaces
+{
+    public interface ISessionWrapper
+    {
+
+        public T GetFromSession<T>(string key);
+        public void SetInSession<T>(string key, T value);
+        public void RemoveFromSession(string key);
+    }
 }
 ");
             }
@@ -3916,6 +4082,9 @@ namespace " + ApplicationNameSpace + @".Services.Interfaces
                                            @">> orderBy = null, int pageIndex = 0,
             int pageSize = 10, params Expression<Func<" + className + @", object>>[] includes);
 
+  Task<Response<PagedResult<" + className + @"ReadDto>>> GetPagedListAsync(string searchValue = null, string orderByColumn = null, bool orderAscendingDirection = true, int pageIndex = 0,
+            int pageSize = 10, params Expression<Func<" + className + @", object>>[] includes);
+
     }
 }"
                     );
@@ -3949,6 +4118,7 @@ using " + ApplicationNameSpace + @".Interfaces;
 using " + ApplicationNameSpace + @".Interfaces.Repositories;
 using " + ApplicationNameSpace + @".Services.Interfaces;
 using " + ApplicationNameSpace + @".Validations;
+using " + ApplicationNameSpace + @".Extensions;
 using " + DomainNameSpace + @".Common;
 using " + DomainNameSpace + @".Entities;
 using FluentValidation.Results;
@@ -4252,7 +4422,7 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
 
                     #endregion
 
-                    #region GetAllAsync
+                    #region GetPagedListAsync
 
                     streamWriter.WriteLine(@" public async Task<Response<PagedResult<" + className +
                                            @"ReadDto>>> GetPagedListAsync(Expression<Func<" + className +
@@ -4285,6 +4455,51 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                         return new Response<PagedResult<" + className + @"ReadDto>>(""not authorized"");
                     }
                 ");
+
+
+                    streamWriter.WriteLine(@" public async Task<Response<PagedResult<" + className +
+                                           @"ReadDto>>> GetPagedListAsync(string searchValue = null, string orderByColumn = null, bool orderAscendingDirection = true, int pageIndex = 0, int pageSize = 10, params Expression<Func<" +
+                                           className + @", object>>[] includes)
+                    {
+                        if (_permissionChecker.HasClaim(AppPermissions." + className + @".List))
+                        {
+
+                Expression<Func<" + className + @", bool>> predicate = null;
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    predicate = " + UtilityHelper.GetColumnNameForSearchInDatabase(table) + @"
+                }
+
+                Func<IQueryable<" + className + @">, IOrderedQueryable<" + className + @">> orderByFilter = null;
+
+                if (!string.IsNullOrEmpty(orderByColumn))
+                {
+                    orderByFilter = (o => (IOrderedQueryable<" + className + @">)o.OrderByDynamic(orderByColumn, (orderAscendingDirection ? DtOrderDir.Asc : DtOrderDir.Desc)));
+                }
+
+                            var pagedResult = new PagedResult<" + className + @"ReadDto>();
+
+                            var result = await _unitOfWork.Repository<I" + className +
+                                           @"RepositoryAsync>().GetPagedListAsync(predicate, orderByFilter, pageIndex, pageSize, includes);
+                            if (result != null)
+                            {
+                                pagedResult.TotalCount = result.TotalCount;
+                                pagedResult.FilteredTotalCount = result.FilteredTotalCount;
+
+                                if (result.Data != null && result.Data.Count > 0)
+                                {
+                                    pagedResult.Data = _mapper.Map<List<" + className + @"ReadDto>>(result.Data);
+                                }
+                            }
+
+                            return new Response<PagedResult<" + className + @"ReadDto>>(pagedResult);
+                        }
+
+                        return new Response<PagedResult<" + className + @"ReadDto>>(""not authorized"");
+                    }
+                ");
+
+
 
                     #endregion
 
@@ -5069,7 +5284,7 @@ namespace  " + ApiNameSpace + @".Controllers
                 {
                     if (response.Succeeded)
                     {
-                        return Ok(response.Data);
+                        return Ok(response);
                     }
                     else
                     {
@@ -5100,7 +5315,7 @@ namespace  " + ApiNameSpace + @".Controllers
                 {
                     if (response.Succeeded)
                     {
-                        return Ok(response.Data);
+                        return Ok(response);
                     }
                     else
                     {
@@ -5201,9 +5416,9 @@ namespace " + ApiNameSpace + @".Controllers
         
         [HttpGet]
         [ProducesResponseType(200, Type = typeof(PagedResult<" + className + @"ReadDto>))]
-        public async Task<ActionResult> GetAllPagedList(int pageIndex, int pageSize)
+        public async Task<ActionResult> GetAllPagedList(string searchBy, string orderBy, bool orderAscendingDirection,int pageIndex, int pageSize)
         {
-            return Ok(await _" + Camel_className + @"Service.GetPagedListAsync(null, (o => o.OrderBy(x => x.DisplayOrder)), pageIndex, pageSize));
+            return Ok(await _" + Camel_className + @"Service.GetPagedListAsync(searchBy, orderBy, orderAscendingDirection, pageIndex, pageSize));
         }
         
         [HttpGet(""{id:Guid}"", Name = """ + "GetById" + className + @""")]
