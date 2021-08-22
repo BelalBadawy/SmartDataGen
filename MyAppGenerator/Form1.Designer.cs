@@ -78,11 +78,9 @@
             this.groupBox1.Controls.Add(this.chklistCulutres);
             this.groupBox1.Controls.Add(this.txtProjectName);
             this.groupBox1.Controls.Add(this.label5);
-            this.groupBox1.Location = new System.Drawing.Point(19, 386);
-            this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox1.Location = new System.Drawing.Point(14, 314);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
-            this.groupBox1.Size = new System.Drawing.Size(465, 468);
+            this.groupBox1.Size = new System.Drawing.Size(349, 380);
             this.groupBox1.TabIndex = 21;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "C#";
@@ -90,10 +88,9 @@
             // chkWithTranslations
             // 
             this.chkWithTranslations.AutoSize = true;
-            this.chkWithTranslations.Location = new System.Drawing.Point(275, 251);
-            this.chkWithTranslations.Margin = new System.Windows.Forms.Padding(4);
+            this.chkWithTranslations.Location = new System.Drawing.Point(206, 204);
             this.chkWithTranslations.Name = "chkWithTranslations";
-            this.chkWithTranslations.Size = new System.Drawing.Size(133, 21);
+            this.chkWithTranslations.Size = new System.Drawing.Size(104, 17);
             this.chkWithTranslations.TabIndex = 29;
             this.chkWithTranslations.Text = "With Translation";
             this.chkWithTranslations.UseVisualStyleBackColor = true;
@@ -101,10 +98,9 @@
             // chAddDapperToDbContext
             // 
             this.chAddDapperToDbContext.AutoSize = true;
-            this.chAddDapperToDbContext.Location = new System.Drawing.Point(148, 176);
-            this.chAddDapperToDbContext.Margin = new System.Windows.Forms.Padding(4);
+            this.chAddDapperToDbContext.Location = new System.Drawing.Point(111, 143);
             this.chAddDapperToDbContext.Name = "chAddDapperToDbContext";
-            this.chAddDapperToDbContext.Size = new System.Drawing.Size(192, 21);
+            this.chAddDapperToDbContext.Size = new System.Drawing.Size(151, 17);
             this.chAddDapperToDbContext.TabIndex = 28;
             this.chAddDapperToDbContext.Text = "Add Dapper to DBContext";
             this.chAddDapperToDbContext.UseVisualStyleBackColor = true;
@@ -112,10 +108,9 @@
             // label9
             // 
             this.label9.AutoSize = true;
-            this.label9.Location = new System.Drawing.Point(16, 135);
-            this.label9.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label9.Location = new System.Drawing.Point(12, 110);
             this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(72, 17);
+            this.label9.Size = new System.Drawing.Size(56, 13);
             this.label9.TabIndex = 27;
             this.label9.Text = "Key Type:";
             // 
@@ -125,19 +120,17 @@
             this.ddlKeyType.Items.AddRange(new object[] {
             "Int",
             "Uniqueidentifier"});
-            this.ddlKeyType.Location = new System.Drawing.Point(148, 135);
-            this.ddlKeyType.Margin = new System.Windows.Forms.Padding(4);
+            this.ddlKeyType.Location = new System.Drawing.Point(111, 110);
             this.ddlKeyType.Name = "ddlKeyType";
-            this.ddlKeyType.Size = new System.Drawing.Size(280, 24);
+            this.ddlKeyType.Size = new System.Drawing.Size(211, 21);
             this.ddlKeyType.TabIndex = 26;
             // 
             // label10
             // 
             this.label10.AutoSize = true;
-            this.label10.Location = new System.Drawing.Point(16, 87);
-            this.label10.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label10.Location = new System.Drawing.Point(12, 71);
             this.label10.Name = "label10";
-            this.label10.Size = new System.Drawing.Size(88, 17);
+            this.label10.Size = new System.Drawing.Size(70, 13);
             this.label10.TabIndex = 25;
             this.label10.Text = "Architecture:";
             // 
@@ -149,20 +142,19 @@
             "CQRS Architecture",
             "CQRS 2 Architecture",
             "DbContext Architecture",
-            "Clean Arch Repository"});
-            this.ddlArchitecture.Location = new System.Drawing.Point(148, 87);
-            this.ddlArchitecture.Margin = new System.Windows.Forms.Padding(4);
+            "Clean Arch Repository EF",
+            "Clean Arch Repository Dapper"});
+            this.ddlArchitecture.Location = new System.Drawing.Point(111, 71);
             this.ddlArchitecture.Name = "ddlArchitecture";
-            this.ddlArchitecture.Size = new System.Drawing.Size(280, 24);
+            this.ddlArchitecture.Size = new System.Drawing.Size(211, 21);
             this.ddlArchitecture.TabIndex = 24;
             // 
             // chkWithResourcesFile
             // 
             this.chkWithResourcesFile.AutoSize = true;
-            this.chkWithResourcesFile.Location = new System.Drawing.Point(20, 251);
-            this.chkWithResourcesFile.Margin = new System.Windows.Forms.Padding(4);
+            this.chkWithResourcesFile.Location = new System.Drawing.Point(15, 204);
             this.chkWithResourcesFile.Name = "chkWithResourcesFile";
-            this.chkWithResourcesFile.Size = new System.Drawing.Size(156, 21);
+            this.chkWithResourcesFile.Size = new System.Drawing.Size(120, 17);
             this.chkWithResourcesFile.TabIndex = 18;
             this.chkWithResourcesFile.Text = "With Resources File";
             this.chkWithResourcesFile.UseVisualStyleBackColor = true;
@@ -178,46 +170,41 @@
             "en English",
             "es Spanish",
             "fr French"});
-            this.chklistCulutres.Location = new System.Drawing.Point(21, 279);
-            this.chklistCulutres.Margin = new System.Windows.Forms.Padding(4);
+            this.chklistCulutres.Location = new System.Drawing.Point(16, 227);
             this.chklistCulutres.Name = "chklistCulutres";
-            this.chklistCulutres.Size = new System.Drawing.Size(391, 123);
+            this.chklistCulutres.Size = new System.Drawing.Size(294, 94);
             this.chklistCulutres.TabIndex = 17;
             // 
             // txtProjectName
             // 
-            this.txtProjectName.Location = new System.Drawing.Point(148, 39);
-            this.txtProjectName.Margin = new System.Windows.Forms.Padding(4);
+            this.txtProjectName.Location = new System.Drawing.Point(111, 32);
             this.txtProjectName.Name = "txtProjectName";
-            this.txtProjectName.Size = new System.Drawing.Size(283, 22);
+            this.txtProjectName.Size = new System.Drawing.Size(213, 20);
             this.txtProjectName.TabIndex = 11;
             // 
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(17, 39);
-            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label5.Location = new System.Drawing.Point(13, 32);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(97, 17);
+            this.label5.Size = new System.Drawing.Size(75, 13);
             this.label5.TabIndex = 10;
             this.label5.Text = "Project Name:";
             // 
             // schemaTreeView
             // 
             this.schemaTreeView.CheckBoxes = true;
-            this.schemaTreeView.Location = new System.Drawing.Point(539, 27);
-            this.schemaTreeView.Margin = new System.Windows.Forms.Padding(4);
+            this.schemaTreeView.Location = new System.Drawing.Point(404, 22);
             this.schemaTreeView.Name = "schemaTreeView";
-            this.schemaTreeView.Size = new System.Drawing.Size(695, 402);
+            this.schemaTreeView.Size = new System.Drawing.Size(522, 327);
             this.schemaTreeView.TabIndex = 20;
             this.schemaTreeView.AfterCheck += new System.Windows.Forms.TreeViewEventHandler(this.schemaTreeView_AfterCheck);
             // 
             // btnGenerator
             // 
-            this.btnGenerator.Location = new System.Drawing.Point(539, 437);
-            this.btnGenerator.Margin = new System.Windows.Forms.Padding(4);
+            this.btnGenerator.Location = new System.Drawing.Point(404, 355);
             this.btnGenerator.Name = "btnGenerator";
-            this.btnGenerator.Size = new System.Drawing.Size(188, 28);
+            this.btnGenerator.Size = new System.Drawing.Size(141, 23);
             this.btnGenerator.TabIndex = 19;
             this.btnGenerator.Text = "Generate DAL";
             this.btnGenerator.UseVisualStyleBackColor = true;
@@ -226,10 +213,9 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(43, 112);
-            this.label3.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label3.Location = new System.Drawing.Point(32, 91);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(73, 17);
+            this.label3.Size = new System.Drawing.Size(57, 13);
             this.label3.TabIndex = 7;
             this.label3.Text = "Password:";
             // 
@@ -237,10 +223,9 @@
             // 
             this.rbtnWindowsAuthentication.AutoSize = true;
             this.rbtnWindowsAuthentication.Checked = true;
-            this.rbtnWindowsAuthentication.Location = new System.Drawing.Point(20, 26);
-            this.rbtnWindowsAuthentication.Margin = new System.Windows.Forms.Padding(4);
+            this.rbtnWindowsAuthentication.Location = new System.Drawing.Point(15, 21);
             this.rbtnWindowsAuthentication.Name = "rbtnWindowsAuthentication";
-            this.rbtnWindowsAuthentication.Size = new System.Drawing.Size(179, 21);
+            this.rbtnWindowsAuthentication.Size = new System.Drawing.Size(141, 17);
             this.rbtnWindowsAuthentication.TabIndex = 0;
             this.rbtnWindowsAuthentication.TabStop = true;
             this.rbtnWindowsAuthentication.Text = "Windows Authentication";
@@ -249,40 +234,36 @@
             // 
             // txtLoginName
             // 
-            this.txtLoginName.Location = new System.Drawing.Point(129, 80);
-            this.txtLoginName.Margin = new System.Windows.Forms.Padding(4);
+            this.txtLoginName.Location = new System.Drawing.Point(97, 65);
             this.txtLoginName.Name = "txtLoginName";
-            this.txtLoginName.Size = new System.Drawing.Size(221, 22);
+            this.txtLoginName.Size = new System.Drawing.Size(167, 20);
             this.txtLoginName.TabIndex = 6;
             this.txtLoginName.TextChanged += new System.EventHandler(this.txtLoginName_TextChanged);
             // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(43, 80);
-            this.label4.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label4.Location = new System.Drawing.Point(32, 65);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(88, 17);
+            this.label4.Size = new System.Drawing.Size(66, 13);
             this.label4.TabIndex = 5;
             this.label4.Text = "Login Name:";
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(20, 28);
-            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label1.Location = new System.Drawing.Point(15, 23);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(50, 17);
+            this.label1.Size = new System.Drawing.Size(39, 13);
             this.label1.TabIndex = 14;
             this.label1.Text = "Server";
             // 
             // rbtnSQLServerAuthentication
             // 
             this.rbtnSQLServerAuthentication.AutoSize = true;
-            this.rbtnSQLServerAuthentication.Location = new System.Drawing.Point(20, 54);
-            this.rbtnSQLServerAuthentication.Margin = new System.Windows.Forms.Padding(4);
+            this.rbtnSQLServerAuthentication.Location = new System.Drawing.Point(15, 44);
             this.rbtnSQLServerAuthentication.Name = "rbtnSQLServerAuthentication";
-            this.rbtnSQLServerAuthentication.Size = new System.Drawing.Size(197, 21);
+            this.rbtnSQLServerAuthentication.Size = new System.Drawing.Size(152, 17);
             this.rbtnSQLServerAuthentication.TabIndex = 1;
             this.rbtnSQLServerAuthentication.Text = "SQL Server Authentication";
             this.rbtnSQLServerAuthentication.UseVisualStyleBackColor = true;
@@ -290,28 +271,25 @@
             // 
             // txtPassword
             // 
-            this.txtPassword.Location = new System.Drawing.Point(129, 112);
-            this.txtPassword.Margin = new System.Windows.Forms.Padding(4);
+            this.txtPassword.Location = new System.Drawing.Point(97, 91);
             this.txtPassword.Name = "txtPassword";
-            this.txtPassword.Size = new System.Drawing.Size(221, 22);
+            this.txtPassword.Size = new System.Drawing.Size(167, 20);
             this.txtPassword.TabIndex = 8;
             this.txtPassword.TextChanged += new System.EventHandler(this.txtPassword_TextChanged);
             // 
             // txtServer
             // 
-            this.txtServer.Location = new System.Drawing.Point(107, 28);
-            this.txtServer.Margin = new System.Windows.Forms.Padding(4);
+            this.txtServer.Location = new System.Drawing.Point(80, 23);
             this.txtServer.Name = "txtServer";
-            this.txtServer.Size = new System.Drawing.Size(365, 22);
+            this.txtServer.Size = new System.Drawing.Size(275, 20);
             this.txtServer.TabIndex = 15;
             this.txtServer.TextChanged += new System.EventHandler(this.txtServer_TextChanged);
             // 
             // btnConnect
             // 
-            this.btnConnect.Location = new System.Drawing.Point(88, 159);
-            this.btnConnect.Margin = new System.Windows.Forms.Padding(4);
+            this.btnConnect.Location = new System.Drawing.Point(66, 129);
             this.btnConnect.Name = "btnConnect";
-            this.btnConnect.Size = new System.Drawing.Size(188, 28);
+            this.btnConnect.Size = new System.Drawing.Size(141, 23);
             this.btnConnect.TabIndex = 9;
             this.btnConnect.Text = "Connect To Server";
             this.btnConnect.UseVisualStyleBackColor = true;
@@ -327,119 +305,106 @@
             this.grpAuthentication.Controls.Add(this.rbtnWindowsAuthentication);
             this.grpAuthentication.Controls.Add(this.txtLoginName);
             this.grpAuthentication.Controls.Add(this.label4);
-            this.grpAuthentication.Location = new System.Drawing.Point(19, 105);
-            this.grpAuthentication.Margin = new System.Windows.Forms.Padding(4);
+            this.grpAuthentication.Location = new System.Drawing.Point(14, 85);
             this.grpAuthentication.Name = "grpAuthentication";
-            this.grpAuthentication.Padding = new System.Windows.Forms.Padding(4);
-            this.grpAuthentication.Size = new System.Drawing.Size(465, 274);
+            this.grpAuthentication.Size = new System.Drawing.Size(349, 223);
             this.grpAuthentication.TabIndex = 18;
             this.grpAuthentication.TabStop = false;
             this.grpAuthentication.Text = "Authentication";
             // 
             // txtConnectionString
             // 
-            this.txtConnectionString.Location = new System.Drawing.Point(5, 225);
-            this.txtConnectionString.Margin = new System.Windows.Forms.Padding(4);
+            this.txtConnectionString.Location = new System.Drawing.Point(4, 183);
             this.txtConnectionString.Name = "txtConnectionString";
-            this.txtConnectionString.Size = new System.Drawing.Size(451, 22);
+            this.txtConnectionString.Size = new System.Drawing.Size(339, 20);
             this.txtConnectionString.TabIndex = 10;
             // 
             // txtDataBase
             // 
-            this.txtDataBase.Location = new System.Drawing.Point(107, 60);
-            this.txtDataBase.Margin = new System.Windows.Forms.Padding(4);
+            this.txtDataBase.Location = new System.Drawing.Point(80, 49);
             this.txtDataBase.Name = "txtDataBase";
-            this.txtDataBase.Size = new System.Drawing.Size(365, 22);
+            this.txtDataBase.Size = new System.Drawing.Size(275, 20);
             this.txtDataBase.TabIndex = 17;
             this.txtDataBase.TextChanged += new System.EventHandler(this.txtDataBase_TextChanged);
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(20, 60);
-            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label2.Location = new System.Drawing.Point(15, 49);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(70, 17);
+            this.label2.Size = new System.Drawing.Size(53, 13);
             this.label2.TabIndex = 16;
             this.label2.Text = "DataBase";
             // 
             // txtDomainCustomPath
             // 
-            this.txtDomainCustomPath.Location = new System.Drawing.Point(739, 486);
-            this.txtDomainCustomPath.Margin = new System.Windows.Forms.Padding(4);
+            this.txtDomainCustomPath.Location = new System.Drawing.Point(554, 395);
             this.txtDomainCustomPath.Name = "txtDomainCustomPath";
-            this.txtDomainCustomPath.Size = new System.Drawing.Size(495, 22);
+            this.txtDomainCustomPath.Size = new System.Drawing.Size(372, 20);
             this.txtDomainCustomPath.TabIndex = 22;
             // 
             // txtApplicationCustomPath
             // 
-            this.txtApplicationCustomPath.Location = new System.Drawing.Point(739, 522);
-            this.txtApplicationCustomPath.Margin = new System.Windows.Forms.Padding(4);
+            this.txtApplicationCustomPath.Location = new System.Drawing.Point(554, 424);
             this.txtApplicationCustomPath.Name = "txtApplicationCustomPath";
-            this.txtApplicationCustomPath.Size = new System.Drawing.Size(495, 22);
+            this.txtApplicationCustomPath.Size = new System.Drawing.Size(372, 20);
             this.txtApplicationCustomPath.TabIndex = 23;
             // 
             // txtInfrastructureCustomPath
             // 
-            this.txtInfrastructureCustomPath.Location = new System.Drawing.Point(739, 554);
-            this.txtInfrastructureCustomPath.Margin = new System.Windows.Forms.Padding(4);
+            this.txtInfrastructureCustomPath.Location = new System.Drawing.Point(554, 450);
             this.txtInfrastructureCustomPath.Name = "txtInfrastructureCustomPath";
-            this.txtInfrastructureCustomPath.Size = new System.Drawing.Size(495, 22);
+            this.txtInfrastructureCustomPath.Size = new System.Drawing.Size(372, 20);
             this.txtInfrastructureCustomPath.TabIndex = 24;
             // 
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(535, 530);
-            this.label6.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label6.Location = new System.Drawing.Point(401, 431);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(165, 17);
+            this.label6.Size = new System.Drawing.Size(127, 13);
             this.label6.TabIndex = 26;
             this.label6.Text = "Application Custom Path:";
             // 
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(535, 490);
-            this.label7.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label7.Location = new System.Drawing.Point(401, 398);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(144, 17);
+            this.label7.Size = new System.Drawing.Size(110, 13);
             this.label7.TabIndex = 27;
             this.label7.Text = "Domain Custom Path:";
             // 
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(535, 562);
-            this.label8.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label8.Location = new System.Drawing.Point(401, 457);
             this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(180, 17);
+            this.label8.Size = new System.Drawing.Size(143, 13);
             this.label8.TabIndex = 28;
             this.label8.Text = "Infrastructure Custom Path:";
             // 
             // label11
             // 
             this.label11.AutoSize = true;
-            this.label11.Location = new System.Drawing.Point(535, 592);
-            this.label11.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label11.Location = new System.Drawing.Point(401, 481);
             this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(117, 17);
+            this.label11.Size = new System.Drawing.Size(92, 13);
             this.label11.TabIndex = 30;
             this.label11.Text = "API Custom Path:";
             // 
             // txtAPICustomPath
             // 
-            this.txtAPICustomPath.Location = new System.Drawing.Point(739, 584);
-            this.txtAPICustomPath.Margin = new System.Windows.Forms.Padding(4);
+            this.txtAPICustomPath.Location = new System.Drawing.Point(554, 474);
             this.txtAPICustomPath.Name = "txtAPICustomPath";
-            this.txtAPICustomPath.Size = new System.Drawing.Size(495, 22);
+            this.txtAPICustomPath.Size = new System.Drawing.Size(372, 20);
             this.txtAPICustomPath.TabIndex = 29;
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1300, 871);
+            this.ClientSize = new System.Drawing.Size(975, 609);
             this.Controls.Add(this.label11);
             this.Controls.Add(this.txtAPICustomPath);
             this.Controls.Add(this.label8);
@@ -456,7 +421,6 @@
             this.Controls.Add(this.grpAuthentication);
             this.Controls.Add(this.txtDataBase);
             this.Controls.Add(this.label2);
-            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "MainForm";
             this.Text = "My App Generator";
             this.Load += new System.EventHandler(this.MainForm_Load);
