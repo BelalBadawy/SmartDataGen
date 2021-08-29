@@ -12,7 +12,7 @@ using MyAppGenerator.Models;
 
 namespace MyAppGenerator.CsGenerators
 {
-    public static class CleanArchitectureRepository
+    public static class CleanArchitectureDapperRepository
     {
         public static List<Table> tableList = null;
         private static AppSetting _appSetting { get; set; }
@@ -88,7 +88,7 @@ namespace MyAppGenerator.CsGenerators
 
         #endregion
 
-        public static void GenerateCleanArchitectureRepository(AppSetting appSetting)
+        public static void GenerateCleanArchitectureDapperRepository(AppSetting appSetting)
         {
             _appSetting = appSetting;
             DomainNameSpace = appSetting.ProjectName + ".Domain";
@@ -714,7 +714,28 @@ namespace " + DomainNameSpace + @".Common
 
             #endregion
 
+            #region OrderByColumn Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainCommonPath, "OrderByColumn.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using System;
+namespace " + DomainNameSpace + @".Common
+{
+  public class OrderByColumn
+    {
+        public string ColumnName { get; set; }
+        public bool AscendingDirection { get; set; }
+    }
+}
+");
 
+
+            }
+
+
+            #endregion
 
             #region Permissions Class
 
@@ -761,6 +782,9 @@ namespace " + DomainNameSpace + @".Common
             }
 
             #endregion
+
+
+
             #endregion
 
 
@@ -1312,7 +1336,7 @@ namespace " + DomainNameSpace + @".Enums
                                     streamWriter.WriteLine("[ForeignKey(\"" +
                                                            foreignKeysList[j].ForeignKeyColumnName + "\")]");
                                     streamWriter.WriteLine("\t\tpublic virtual " +
-                                                           UtilityHelper.MakeSingular(foreignKeysList[j].PrimaryKeyTableName) + " " +
+                                                           foreignKeysList[j].PrimaryKeyTableName + " " +
                                                            foreignKeysList[j].PrimaryKeyTableName +
                                                            " { get; set; }");
                                 }
@@ -3495,7 +3519,7 @@ dotnet ef database drop --project ""BS.Infrastructure"" --startup-project ""BS.A
 
             #region  Extentions
 
-            #region Linq Extensions
+            #region BadRequestException
 
             using (StreamWriter streamWriter =
                 new StreamWriter(Path.Combine(ApplicationExtentionsPath, "LinqExtensions.cs")))
@@ -3507,7 +3531,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using " + DomainNameSpace + @".Common;
 
-namespace " + ApplicationNameSpace + @".Extensions
+namespace " + ApplicationNameSpace + @".Exceptions
 {
    public static class LinqExtensions
     {
@@ -3702,10 +3726,7 @@ namespace " + ApplicationNameSpace + @".Interfaces
 
                 streamWriter.WriteLine(@"
 using " + DomainNameSpace + @".Common;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 namespace " + ApplicationNameSpace + @".Interfaces
 {
@@ -3713,42 +3734,33 @@ namespace " + ApplicationNameSpace + @".Interfaces
     {
         #region Async
 
-        Task<bool> AnyAsync(Expression<Func<T, bool>> predicate = null);
+        Task<bool> AnyAsync(string where = null, object parms = null);
 
-        Task<int> CountAsync(Expression<Func<T, bool>> predicate = null);
+        Task<int> CountAsync(string where = null, object parms = null);
 
-        Task<T> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate = null,
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
-            params Expression<Func<T, object>>[] includes);
+        Task<T> FirstOrDefaultAsync(string where = null, List<OrderByColumn> orderBy = null, object parms = null);
 
-        Task<PagedResult<T>> GetPagedListAsync(Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, int pageIndex = 0, int pageSize = 10, params Expression<Func<T, object>>[] includes);
+        Task<PagedResult<T>> GetPagedListAsync(string where = null, List<OrderByColumn> orderBy = null, int pageIndex = 0, int pageSize = 10, object parms = null);
 
-        Task<T> GetAsync(object id);
+        Task<T> GetAsync(string where, object parms = null);
 
-        Task<IEnumerable<T>> GetAllAsync(
-            Expression<Func<T, bool>> predicate = null,
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
-            params Expression<Func<T, object>>[] includes);
+        Task<IEnumerable<T>> GetAllAsync(string where = null, List<OrderByColumn> orderBy = null, object parms = null);
 
         #region Add Functions
 
-        Task<T> AddAsync(T entity);
-
-        Task AddAsync(IEnumerable<T> entities);
+        Task<int> AddAsync(T entity);
 
         #endregion
 
         #region Update Functions
 
-        Task UpdateAsync(T entity);
-        Task UpdateAsync(IEnumerable<T> entities);
+        Task<int> UpdateAsync(T entity);
 
         #endregion
 
         #region Delete Functions
-        Task DeleteAsync(object id);
-        Task DeleteAsync(T entity);
-        Task DeleteAsync(IEnumerable<T> entities);
+        Task<int> DeleteAsync(string where, object parms);
+
 
         #endregion
         #endregion
@@ -3793,10 +3805,11 @@ namespace " + ApplicationNameSpace + @".Interfaces
 {
     public interface IUnitOfWork : IDisposable
     {
+        IDbTransaction BeginTransaction();
+        void Rollback();
         RepositoryType Repository<RepositoryType>() where RepositoryType : class;
-        Task<int> CommitAsync();
+        void Commit();
     }
-
 }
 ");
             }
@@ -4055,10 +4068,9 @@ namespace " + ApplicationNameSpace + @".Interfaces
                     streamWriter.WriteLine("using " + DomainNameSpace + ".Entities;");
                     streamWriter.WriteLine("using " + ApplicationNameSpace + ".Dtos;");
                     streamWriter.WriteLine(@"
+using " + DomainNameSpace + @".Common;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 namespace " + ApplicationNameSpace + @".Services.Interfaces
 {
@@ -4070,21 +4082,10 @@ namespace " + ApplicationNameSpace + @".Services.Interfaces
                                            @"UpsertDto);
         Task<Response<bool>> DeleteAsync(" + keyType + @" id);
         Task<Response<" + className + @"ReadDto>> GetByIdAsync(" + keyType + @" id);
-        Task<Response<List<" + className + @"ReadDto>>> GetAllAsync(Expression<Func<" + className +
-                                           @", bool>> predicate = null,
-            Func<IQueryable<" + className + @">, IOrderedQueryable<" + className +
-                                           @">> orderBy = null, params Expression<Func<" + className +
-                                           @", object>>[] includes);
+        Task<Response<List<" + className + @"ReadDto>>> GetAllAsync(string where = null, List<OrderByColumn> orderBy = null, object parms = null);
 
-        Task<Response<PagedResult<" + className + @"ReadDto>>> GetPagedListAsync(Expression<Func<" + className +
-                                           @", bool>> predicate = null,
-            Func<IQueryable<" + className + @">, IOrderedQueryable<" + className +
-                                           @">> orderBy = null, int pageIndex = 0,
-            int pageSize = 10, params Expression<Func<" + className + @", object>>[] includes);
-
-  Task<Response<PagedResult<" + className + @"ReadDto>>> GetPagedListAsync(string searchValue = null, string orderByColumn = null, bool orderAscendingDirection = true, int pageIndex = 0,
-            int pageSize = 10, params Expression<Func<" + className + @", object>>[] includes);
-
+        Task<Response<PagedResult<" + className + @"ReadDto>>> GetPagedListAsync(string where = null, List<OrderByColumn> orderBy = null, int pageIndex = 0, int pageSize = 10, object parms = null);
+  
     }
 }"
                     );
@@ -4175,12 +4176,10 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                         streamWriter.WriteLine(@"
 
                             if (await _unitOfWork.Repository<I" + className + @"RepositoryAsync>()
-                                .AnyAsync(o => o." +
-                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                               ".ToUpper() == " +
-                                               UtilityHelper.FormatCamel(className) + "UpsertDto." +
-                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                               @".ToUpper()))
+                                .AnyAsync("" Where " +
+                                                        UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                               " = @" + UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                               @"  "",null, " + UtilityHelper.FormatCamel(className) + "UpsertDto) ;" +@")
                             {
                                 return new Response<" + keyType + @">(string.Format(SD.ExistData, " +
                                                UtilityHelper.FormatCamel(className) + @"UpsertDto." +
@@ -4196,14 +4195,11 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                         streamWriter.WriteLine(@"
 
                             var exitRecord = await _unitOfWork.Repository<I" + className + @"RepositoryAsync>()
-                                .FirstOrDefaultAsync(o => o." +
+                                .FirstOrDefaultAsync("" Where " +
                                                UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                               ".ToUpper() == " +
-                                               UtilityHelper.FormatCamel(className) + "UpsertDto." +
-                                               UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
-                                               @".ToUpper() ||
-                                       o.Code.ToUpper() == " + UtilityHelper.FormatCamel(className) + "UpsertDto." +
-                                               "Code.ToUpper()) ;");
+                                               " = @" + UtilityHelper.GetColumnNameTitleForCheckExistInDataBase(table) +
+                                               @" OR 
+                                       o.Code = @Code "",null, " + UtilityHelper.FormatCamel(className) + "UpsertDto) ;");
 
                         streamWriter.WriteLine(@"
  if (exitRecord != null)
@@ -4232,10 +4228,10 @@ namespace " + ApplicationNameSpace + @".Services.Implementations
                                 var addedEntity = await _unitOfWork.Repository<I" + className + @"RepositoryAsync>()
                                     .AddAsync(" + UtilityHelper.FormatCamel(className) + @");
 
-                                int effectedRows = await _unitOfWork.CommitAsync();
-                                if (effectedRows != 0)
+                                 _unitOfWork.Commit();
+                                if (addedEntity != 0)
                                 {
-                                    return new Response<" + keyType + @">(addedEntity.Id);
+                                    return new Response<" + keyType + @">(addedEntity);
                                 }
                           
                         }

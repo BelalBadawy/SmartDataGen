@@ -108,9 +108,10 @@ namespace MyAppGenerator
 
                 if (tablesName != null && tablesName.Count > 0)
                 {
+                 
+
                     if (ddlArchitecture.SelectedIndex == -1 || ddlArchitecture.SelectedIndex == 0)
                     {
-
                         #region Onion Architecture
 
                         OnionArchitecture.ProjectName = txtProjectName.Text.Trim();
@@ -119,7 +120,6 @@ namespace MyAppGenerator
                         OnionArchitecture.GenerateOnionArchitecture(txtProjectName.Text.Trim(), outputDirectory);
 
                         #endregion
-
                     }
                     else if (ddlArchitecture.SelectedIndex == 1)
                     {
@@ -165,6 +165,19 @@ namespace MyAppGenerator
                         CleanArchitectureRepository.useResourceFile = chkWithResourcesFile.Checked;
                         CleanArchitectureRepository.tables = tablesName;
                         CleanArchitectureRepository.GenerateCleanArchitectureRepository(appSetting);
+
+                        #endregion
+
+                    }
+                    else if (ddlArchitecture.SelectedIndex == 5)
+                    {
+
+                        #region Clean Architecture Repository Dapper
+
+                        CleanArchitectureDapperRepository.ProjectName = txtProjectName.Text.Trim();
+                        CleanArchitectureDapperRepository.useResourceFile = chkWithResourcesFile.Checked;
+                        CleanArchitectureDapperRepository.tables = tablesName;
+                        CleanArchitectureDapperRepository.GenerateCleanArchitectureDapperRepository(appSetting);
 
                         #endregion
 
