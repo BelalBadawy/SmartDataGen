@@ -1312,7 +1312,7 @@ namespace " + DomainNameSpace + @".Enums
                                     streamWriter.WriteLine("[ForeignKey(\"" +
                                                            foreignKeysList[j].ForeignKeyColumnName + "\")]");
                                     streamWriter.WriteLine("\t\tpublic virtual " +
-                                                           foreignKeysList[j].PrimaryKeyTableName + " " +
+                                                           UtilityHelper.MakeSingular(foreignKeysList[j].PrimaryKeyTableName) + " " +
                                                            foreignKeysList[j].PrimaryKeyTableName +
                                                            " { get; set; }");
                                 }
@@ -3495,7 +3495,7 @@ dotnet ef database drop --project ""BS.Infrastructure"" --startup-project ""BS.A
 
             #region  Extentions
 
-            #region BadRequestException
+            #region Linq Extensions
 
             using (StreamWriter streamWriter =
                 new StreamWriter(Path.Combine(ApplicationExtentionsPath, "LinqExtensions.cs")))
@@ -3507,7 +3507,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using " + DomainNameSpace + @".Common;
 
-namespace " + ApplicationNameSpace + @".Exceptions
+namespace " + ApplicationNameSpace + @".Extensions
 {
    public static class LinqExtensions
     {
