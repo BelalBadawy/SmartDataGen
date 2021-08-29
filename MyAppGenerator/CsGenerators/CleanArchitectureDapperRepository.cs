@@ -921,10 +921,11 @@ namespace " + DomainNameSpace + @".Common
             {
                 // Create the header for the class
                 streamWriter.WriteLine(@"
-                                            using System;
-                                            namespace " + DomainNameSpace + @".Models
-                                            {
-                                             public class LoginModel
+ using System;
+ using System.ComponentModel.DataAnnotations;
+ namespace " + DomainNameSpace + @".Models
+{
+  public class LoginModel
     {
         [Required]
         [EmailAddress]
