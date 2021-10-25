@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CsGenerators\CleanArchitectureDapperRepository.cs" />
+    <Compile Include="CsGenerators\CQRS3Architecture.cs" />
     <Compile Include="CsGenerators\CQRS2Architecture.cs" />
     <Compile Include="CsGenerators\CQRSArchitecture.cs" />
     <Compile Include="CsGenerators\DbContextArchitecture.cs" />

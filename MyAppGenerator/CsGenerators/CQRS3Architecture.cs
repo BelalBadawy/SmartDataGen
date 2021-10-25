@@ -12,7 +12,7 @@ using MyAppGenerator.Models;
 
 namespace MyAppGenerator.CsGenerators
 {
-    public static class CleanArchitectureRepository
+    public static class CQRS3Architecture
     {
         public static List<Table> tableList = null;
         private static AppSetting _appSetting { get; set; }
@@ -88,7 +88,7 @@ namespace MyAppGenerator.CsGenerators
 
         #endregion
 
-        public static void GenerateCleanArchitectureRepository(AppSetting appSetting)
+        public static void GenerateCQRS3Architecture(AppSetting appSetting)
         {
             _appSetting = appSetting;
             DomainNameSpace = appSetting.ProjectName + ".Domain";
@@ -779,7 +779,7 @@ namespace " + DomainNameSpace + @".Common
                                             {
                                                 public interface IAuditable
     {
-        public Guid CreatedBy { get; set; }
+        public Guid? CreatedBy { get; set; }
 
         [DataType(DataType.DateTime)]
         public DateTime CreatedAt { get; set; }
@@ -898,7 +898,6 @@ namespace " + DomainNameSpace + @".Common
                 // Create the header for the class
                 streamWriter.WriteLine(@"
                                             using System;
- using System.ComponentModel.DataAnnotations;
                                             namespace " + DomainNameSpace + @".Models
                                             {
                                              public class LoginModel
@@ -2116,9 +2115,6 @@ namespace " + DataAccessNameSpace + @".Data
             DbSet = DbContext.Set<T>();
         }
 
-           public virtual  IQueryable<T> AsQueryableList(){
-              return  DbSet.AsQueryable().AsNoTracking();
-}
         public virtual async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate = null)
         {
             return await DbSet.AnyAsync(predicate);
@@ -3716,8 +3712,6 @@ namespace " + ApplicationNameSpace + @".Interfaces
      public interface IGenericRepositoryAsync<T> where T : class
     {
         #region Async
-
-        IQueryable<T> AsQueryableList();
 
         Task<bool> AnyAsync(Expression<Func<T, bool>> predicate = null);
 

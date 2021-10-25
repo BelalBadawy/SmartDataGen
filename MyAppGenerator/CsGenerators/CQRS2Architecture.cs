@@ -35,11 +35,18 @@ namespace MyAppGenerator.CsGenerators
 
         public static string AuthorizationPath { get; set; }
 
+        #region Domain Folders
         public static string DomainPath { get; set; }
         public static string DomainCommonPath { get; set; }
         public static string DomainEntitiesPath { get; set; }
         public static string DomainEnumsPath { get; set; }
         public static string DomainResourcesPath { get; set; }
+
+        public static string DomainInterfacesPath { get; set; }
+        public static string DomainModelsPath { get; set; }
+
+        #endregion
+
 
         #region Application Folders
 
@@ -119,13 +126,11 @@ namespace MyAppGenerator.CsGenerators
             UtilityHelper.CreateSubDirectory(InfraEntityConfigurationPath, true);
 
 
-            DomainPath = (string.IsNullOrEmpty(_appSetting.DomainCustomPath) ? Path.Combine(outputDirectory, "Domain") : _appSetting.DomainCustomPath);
+            DomainPath = Path.Combine(outputDirectory, "Domain");
             UtilityHelper.CreateSubDirectory(DomainPath, true);
-
 
             DomainCommonPath = Path.Combine(DomainPath, "Common");
             UtilityHelper.CreateSubDirectory(DomainCommonPath, true);
-
 
             DomainEntitiesPath = Path.Combine(DomainPath, "Entities");
             UtilityHelper.CreateSubDirectory(DomainEntitiesPath, true);
@@ -137,6 +142,14 @@ namespace MyAppGenerator.CsGenerators
 
             DomainResourcesPath = Path.Combine(DomainPath, "Resources");
             UtilityHelper.CreateSubDirectory(DomainResourcesPath, true);
+
+            DomainInterfacesPath = Path.Combine(DomainPath, "Interfaces");
+            UtilityHelper.CreateSubDirectory(DomainInterfacesPath, true);
+
+
+            DomainModelsPath = Path.Combine(DomainPath, "Models");
+            UtilityHelper.CreateSubDirectory(DomainModelsPath, true);
+
 
             #region Applications Folders
 
@@ -238,103 +251,27 @@ namespace MyAppGenerator.CsGenerators
         private static void CreateDomainClasses()
         {
 
-            //  List<Table> tableList = new List<Table>();
-
-            //using (SqlConnection connection = new SqlConnection(UtilityHelper.ConnectionString))
-            //{
-            //    try
-            //    {
-            //        connection.Open();
-
-            //        DataTable dataTable = new DataTable();
-            //        SqlDataAdapter dataAdapter = new SqlDataAdapter(
-            //            UtilityHelper.GetSelectedTablesAndViews(connection.Database,
-            //                tables.Where(o => o.Type != SchemaTypeEnum.StoredProcedure).Select(o => o.Title).ToList()),
-            //            connection);
-            //        dataAdapter.Fill(dataTable);
-
-            //        // Process each table
-            //        foreach (DataRow dataRow in dataTable.Rows)
-            //        {
-            //            Table table = new Table();
-            //            table.Name = (string)dataRow["TABLE_NAME"];
-            //            table.Type = (string)dataRow["TABLE_TYPE"];
-            //            UtilityHelper.QueryTable(connection, table);
-            //            tableList.Add(table);
-            //        }
-
-            //    }
-            //    catch (Exception ex)
-            //    {
-
-            //    }
-            //    finally
-            //    {
-            //        connection.Close();
-            //    }
-            //}
-
-
-
-            string customText = "";
-
             #region Common Classes
 
-            #region IAuditEntity Interface
-
-            customText = UtilityHelper.ReadCustomRegionText(Path.Combine(DomainCommonPath, "IAuditEntity.cs"));
-
-            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(DomainCommonPath, "IAuditEntity.cs")))
-            {
-                // Create the header for the class
-
-                streamWriter.WriteLine(GetCreatedDateTime());
-                streamWriter.WriteLine(@"
-
-using System;
-using System.ComponentModel.DataAnnotations;
-
-namespace " + DomainNameSpace + @".Common
-{
-    public interface IAuditEntity
-    {
-//
-       ");
-                streamWriter.WriteLine(GetIAuditEntity());
-                streamWriter.WriteLine(customText);
-                streamWriter.WriteLine(@" }
-                                        }");
-            }
-
-            #endregion
-
             #region BaseEntity Class
-
-            customText = UtilityHelper.ReadCustomRegionText(Path.Combine(DomainCommonPath, "BaseEntity.cs"));
-
             using (StreamWriter streamWriter =
                 new StreamWriter(Path.Combine(DomainCommonPath, "BaseEntity.cs")))
             {
                 // Create the header for the class
-                streamWriter.WriteLine(GetCreatedDateTime());
                 streamWriter.WriteLine(@"
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+                                            using System;
+                                            using System.ComponentModel.DataAnnotations;
+                                            using System.ComponentModel.DataAnnotations.Schema;
 
-namespace " + DomainNameSpace + @".Common
-{
-    public abstract class BaseEntity 
-    {
-      ");
-                streamWriter.WriteLine(GetBaseEntity());
-                streamWriter.WriteLine(customText);
-
-
-                streamWriter.WriteLine(@" 
-
-        }
-}
+                                            namespace " + DomainNameSpace + @".Common
+                                            {
+                                                public abstract class BaseEntity
+                                                {
+                                                    [Key]
+                                                    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+                                                     public virtual " + UtilityHelper.GetIDKeyType(_appSetting) + @" Id { get; set; }
+                                                }
+                                            }
                                         ");
 
 
@@ -342,311 +279,32 @@ namespace " + DomainNameSpace + @".Common
 
             #endregion
 
-            #region ClientMessage Class
-
+            #region Custom Claim Types Class
             using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(DomainCommonPath, "ClientMessage.cs")))
+                new StreamWriter(Path.Combine(DomainCommonPath, "CustomClaimTypes.cs")))
             {
-                streamWriter.WriteLine(GetCreatedDateTime());
                 // Create the header for the class
                 streamWriter.WriteLine(@"
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+                                            using System;
 
-using " + DomainNameSpace + @".Enums;
-
-namespace " + DomainNameSpace + @".Common
-{
-   public class ClientMessage<T>
-    {
-        public ClientMessage()
-        {
-        }
-
-        public ClientMessage(AppEnums.OperationStatus statusCode, List<string> message, List<ValidationResult> validationResults, T data)
-        {
-            _statusCode = statusCode;
-            _message = message;
-            _validationResults = validationResults;
-            _data = data;
-        }
-
-        private AppEnums.OperationStatus _statusCode;
-        public AppEnums.OperationStatus ClientStatusCode
-        {
-            get { return _statusCode; }
-            set { _statusCode = value; }
-        }
-
-        private List<string> _message = new List<string>();
-        public List<string> ClientMessageContent
-        {
-            get { return _message; }
-            set { _message = value; }
-        }
-
-
-        private List<ValidationResult> _validationResults = new List<ValidationResult>();
-        public List<ValidationResult> ValidationResults
-        {
-            get { return _validationResults; }
-            set { _validationResults = value; }
-        }
-
-        private T _data;
-
-        public T ReturnedData
-        {
-            get
-            {
-                return _data;
-            }
-            set
-            {
-                _data = value;
-            }
-        }
-    }
-}
-
-            ");
+                                            namespace " + DomainNameSpace + @".Common
+                                            {
+                                               public class CustomClaimTypes
+                                                {
+                                                     public const string Permission = ""permission"";
+                                                }
+                                            }
+                                        ");
 
 
             }
-
-
-            #endregion
-
-
-            #region Response Class
-
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(DomainCommonPath, "Response.cs")))
-            {
-                streamWriter.WriteLine(GetCreatedDateTime());
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using System.Collections.Generic;
-
-namespace " + DomainNameSpace + @".Common
-{
-   public class Response<T>
-    {
-        public Response()
-        {
-        }
-        public Response(T data, string message = null)
-        {
-            Succeeded = true;
-            Message = message;
-            Data = data;
-        }
-        public Response(string message)
-        {
-            Succeeded = false;
-            Message = message;
-        }
-
-        public Response(List<string> errors)
-        {
-            Succeeded = false;
-            Errors = errors;
-        }
-
-        public bool Succeeded { get; set; }
-        public string Message { get; set; }
-        public List<string> Errors { get; set; }
-        public T Data { get; set; }
-    }
-   
-}
-
-            ");
-
-
-            }
-
-
-            #endregion
-
-
-            #region JWTSettings
-
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(DomainCommonPath, "JWTSettings.cs")))
-            {
-                streamWriter.WriteLine(GetCreatedDateTime());
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using System.Collections.Generic;
-
-namespace " + DomainNameSpace + @".Common
-{
-   public class JWTSettings
-    {
-        public string Key { get; set; }
-        public string Issuer { get; set; }
-        public string Audience { get; set; }
-        public double DurationInMinutes { get; set; }
-    }
-   
-}
-
-            ");
-
-
-            }
-
-
-            #endregion
-
-            #region MailSettings
-
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(DomainCommonPath, "MailSettings.cs")))
-            {
-                streamWriter.WriteLine(GetCreatedDateTime());
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using System.Collections.Generic;
-
-namespace " + DomainNameSpace + @".Common
-{
-    public class MailSettings
-    {
-        public string EmailFrom { get; set; }
-        public string SmtpHost { get; set; }
-        public int SmtpPort { get; set; }
-        public string SmtpUser { get; set; }
-        public string SmtpPass { get; set; }
-        public string DisplayName { get; set; }
-    }
-   
-}
-
-            ");
-
-
-            }
-
-
-            #endregion
-
-            #region KeyValue Class
-
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(DomainCommonPath, "KeyValue.cs")))
-            {
-                streamWriter.WriteLine(GetCreatedDateTime());
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace " + DomainNameSpace + @".Common
-{
-  public class KeyValue
-    {
-        public string Id { get; set; }
-        public string Value { get; set; }
-    }
-}
-");
-
-
-            }
-
-
-            #endregion
-
-            #region SD Static Data Class
-
-            customText = UtilityHelper.ReadCustomRegionText(Path.Combine(DomainCommonPath, "SD.cs"));
-
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(DomainCommonPath, "SD.cs")))
-            {
-                streamWriter.WriteLine(GetCreatedDateTime());
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-namespace " + DomainNameSpace + @".Common
-{
-    public static class SD
-    {
-        #region User Roles
-
-        public const string Admin = ""Admin"";
-        public const string User = ""User"";
-
-        #endregion
-
-
-
-        #region Messages
-        public const string SavedSuccessfully = ""Saved Successfully"";
-        public const string ExistData = ""This [{0}] already exist."";
-        public const string ErrorOccured = ""An error has been occured."";
-        public const string NotExistData = ""This record does not exist."";
-        public const string CanNotDeleteData = ""Sorry we can't delete this record"";
-        public const string AllowedForUpload = ""Only {0} are allowed to be uploaded."";
-        public const string IsRequiredData = ""{ 0} is required."";
-
-
-        #endregion
-
- ");
-
-                streamWriter.WriteLine(customText);
-
-
-                streamWriter.WriteLine(@" 
-    }
-}
-");
-
-
-            }
-
-
-            #endregion
-
-            #region PagedResult Class
-
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(DomainCommonPath, "PagedResult.cs")))
-            {
-                streamWriter.WriteLine(GetCreatedDateTime());
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-using System.Collections.Generic;
-
-namespace " + DomainNameSpace + @".Common
-{
-  public class PagedResult<T>
-    {
-        public int TotalCount { get; set; }
-        public int FilteredTotalCount { get; set; }
-        public List<T> Data { get; set; }
-    }
-}
-");
-
-
-            }
-
 
             #endregion
 
             #region Data Table Models Class
-
             using (StreamWriter streamWriter =
                 new StreamWriter(Path.Combine(DomainCommonPath, "DatatableModels.cs")))
             {
-                streamWriter.WriteLine(GetCreatedDateTime());
-
                 // Create the header for the class
                 streamWriter.WriteLine(@"
 using Newtonsoft.Json;
@@ -654,7 +312,6 @@ using System.Collections.Generic;
 
 namespace " + DomainNameSpace + @".Common
 {
-  ///This view model class has been referred from example created by Marien Monnier at Soft.it. All credits to Marien for this class
 
     /// <summary>
     /// A full result, as understood by jQuery DataTables.
@@ -855,13 +512,445 @@ namespace " + DomainNameSpace + @".Common
 
             #endregion
 
-            #region Enums Class
 
-            customText = UtilityHelper.ReadCustomRegionText(Path.Combine(DomainEnumsPath, "AppEnums.cs"));
+            #region Jwt Settings Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainCommonPath, "JwtSettings.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                            using System;
+
+                                            namespace " + DomainNameSpace + @".Common
+                                            {
+                                              public class JwtSettings
+                                                {
+                                                    public string Key { get; set; }
+                                                    public string Issuer { get; set; }
+                                                    public string Audience { get; set; }
+                                                    public double DurationInMinutes { get; set; }
+                                                }
+                                            }
+                                        ");
+
+
+            }
+
+            #endregion
+
+
+            #region PagedResult Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainCommonPath, "PagedResult.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using System.Collections.Generic;
+
+namespace " + DomainNameSpace + @".Common
+{
+  public class PagedResult<T>
+    {
+        public int TotalCount { get; set; }
+        public int FilteredTotalCount { get; set; }
+        public List<T> Data { get; set; }
+    }
+}
+");
+
+
+            }
+
+
+            #endregion
+
+
+            #region Response Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainCommonPath, "Response.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using System;
+using System.Collections.Generic;
+namespace " + DomainNameSpace + @".Common
+{
+    public class Response<T>
+    {
+        public Response()
+        {
+        }
+        public Response(T data, string message = null)
+        {
+            Succeeded = true;
+            Message = message;
+            Data = data;
+        }
+        public Response(string message)
+        {
+            Succeeded = false;
+            Message = message;
+        }
+
+        public Response(List<string> errors)
+        {
+            Succeeded = false;
+            Errors = errors;
+        }
+        public bool Succeeded { get; set; }
+        public string Message { get; set; }
+        public List<string> Errors { get; set; }
+        public T Data { get; set; }
+    }
+}
+
+            ");
+
+
+            }
+
+
+            #endregion
+
+            #region KeyValue Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainCommonPath, "KeyValue.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+using System;
+namespace " + DomainNameSpace + @".Common
+{
+  public class KeyValue
+    {
+        public " + UtilityHelper.GetIDKeyType(_appSetting) + @" Id { get; set; }
+        public string Value { get; set; }
+    }
+}
+");
+
+
+            }
+
+
+            #endregion
+
+            #region SD Static Data Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainCommonPath, "SD.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+namespace " + DomainNameSpace + @".Common
+{
+    public static class SD
+    {
+        #region User Roles
+
+        public const string Admin = ""Admin"";
+        public const string User = ""User"";
+
+        #endregion
+
+
+
+        #region Messages
+        public const string SavedSuccessfully = ""Saved Successfully"";
+        public const string ExistData = ""This [{0}] already exist."";
+        public const string ErrorOccurred = ""An error has been occured."";
+        public const string NotExistData = ""This record does not exist."";
+        public const string CanNotDeleteData = ""Sorry we can't delete this record"";
+        public const string AllowedForUpload = ""Only {0} are allowed to be uploaded."";
+        public const string IsRequiredData = ""{ 0} is required."";
+
+
+        #endregion
+    }
+}
+");
+
+
+            }
+
+
+            #endregion
+
+
+
+            #region Permissions Class
+
+
+
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainCommonPath, "AppPermissions.cs")))
+            {
+
+                streamWriter.WriteLine(@"
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+
+namespace " + DomainNameSpace + @".Common
+{
+    public static class AppPermissions 
+    {
+      ");
+                string className = "";
+
+                foreach (Table table in tableList)
+                {
+                    className = UtilityHelper.MakeSingular(table.Name);
+
+                    streamWriter.WriteLine("public static class " + className);
+                    streamWriter.WriteLine("{");
+                    streamWriter.WriteLine("public const string List = \"Permissions." + className + ".List\";");
+                    streamWriter.WriteLine("public const string View = \"Permissions." + className + ".View\";");
+                    streamWriter.WriteLine("public const string Create = \"Permissions." + className + ".Create\";");
+                    streamWriter.WriteLine("public const string Edit = \"Permissions." + className + ".Edit\";");
+                    streamWriter.WriteLine("public const string Delete = \"Permissions." + className + ".Delete\";");
+                    streamWriter.WriteLine("}");
+
+                }
+
+                streamWriter.WriteLine(@" 
+
+        }
+}
+                                        ");
+
+
+            }
+
+            #endregion
+            #endregion
+
+
+            #region Interfaces
+
+            #region IAuditable Interface
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainInterfacesPath, "IAuditable.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                            using System;
+                                            using System.ComponentModel.DataAnnotations;
+
+                                            namespace " + DomainNameSpace + @".Interfaces
+                                            {
+                                                public interface IAuditable
+    {
+        public Guid? CreatedBy { get; set; }
+
+        [DataType(DataType.DateTime)]
+        public DateTime CreatedAt { get; set; }
+
+        public Guid? LastModifiedBy { get; set; }
+
+        [DataType(DataType.DateTime)]
+        public DateTime? LastModifiedAt { get; set; }
+    }
+                                            }
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #region IBaseEntity Interface
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainInterfacesPath, "IBaseEntity.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                            using System;
+                                            using System.ComponentModel.DataAnnotations;
+
+                                            namespace " + DomainNameSpace + @".Interfaces
+                                            {
+                                               public interface IBaseEntity
+                                                {
+                                                    public " + UtilityHelper.GetIDKeyType(_appSetting) + @" Id { get; set; }
+                                                }
+                                            }
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #region IDataConcurrency Interface
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainInterfacesPath, "IDataConcurrency.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                            using System;
+                                            namespace " + DomainNameSpace + @".Interfaces
+                                            {
+                                               public interface IDataConcurrency
+                                                {
+                                                    public byte[] RowVersion { get; set; }
+                                                }
+                                            }
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #region ISoftDelete Interface
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainInterfacesPath, "ISoftDelete.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                            using System;
+                                            namespace " + DomainNameSpace + @".Interfaces
+                                            {
+                                              public interface ISoftDelete
+                                                {
+                                                    public bool SoftDeleted { get; set; }
+                                                }
+                                            }
+                                        ");
+
+
+            }
+
+            #endregion
+
+
+            #endregion
+
+            #region Models
+
+            #region AuthenticationResponse Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainModelsPath, "AuthenticationResponse.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                            using System;
+                                            namespace " + DomainNameSpace + @".Models
+                                            {
+                                              public class AuthenticationResponse
+                                                {
+                                                    public string Id { get; set; }
+                                                    public string UserName { get; set; }
+                                                    public string Email { get; set; }
+                                                    public string Token { get; set; }
+                                                }
+                                            }
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #region LoginModel Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainModelsPath, "LoginModel.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                            using System;
+                                            namespace " + DomainNameSpace + @".Models
+                                            {
+                                             public class LoginModel
+    {
+        [Required]
+        [EmailAddress]
+        [MaxLength(100)]
+        public string Email { get; set; }
+        [Required]
+        [MaxLength(20)]
+        public string Password { get; set; }
+    }
+                                            }
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #region Log User Activity Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainModelsPath, "LogUserActivity.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                            using System;
+                                            namespace " + DomainNameSpace + @".Models
+                                            {
+                                                public class LogUserActivity
+                                                {
+		                                            public Guid Id { get; set; }
+                                                    public Guid UserId { get; set; }
+                                                    public DateTime CreatedDateTime { get; set; }
+                                                    public string UrlData { get; set; }
+                                                    public string UserData { get; set; }
+                                                    public string IPAddress { get; set; }
+                                                    public string Browser { get; set; }
+                                                    public string HttpMethod { get; set; }
+	                                            }
+                                            }
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #region RegistrationModel Class
+            using (StreamWriter streamWriter =
+                new StreamWriter(Path.Combine(DomainModelsPath, "RegistrationModel.cs")))
+            {
+                // Create the header for the class
+                streamWriter.WriteLine(@"
+                                            using System;
+                                            using System.ComponentModel.DataAnnotations;
+                                            namespace " + DomainNameSpace + @".Models
+                                            {
+                                              public class RegistrationModel
+                                                {
+                                                    [Required]
+                                               
+                                                    public string FullName { get; set; }
+
+                                                 
+                                                    [Required]
+                                                    [EmailAddress]
+                                                    public string Email { get; set; }
+
+                                                    //[Required]
+                                                    //[MinLength(6)]
+                                                    //public string UserName { get; set; }
+
+                                                    [Required]
+                                                    [MinLength(6)]
+                                                    public string Password { get; set; }
+                                                }
+                                            }
+                                        ");
+
+
+            }
+
+            #endregion
+
+            #endregion
+
+
+            #region Enums Class
             using (StreamWriter streamWriter =
                 new StreamWriter(Path.Combine(DomainEnumsPath, "AppEnums.cs")))
             {
-                streamWriter.WriteLine(GetCreatedDateTime());
                 // Create the header for the class
                 streamWriter.WriteLine(@"
 using System;
@@ -881,7 +970,7 @@ namespace " + DomainNameSpace + @".Enums
             ValidationError = 3,
         }
 
-        public enum MsgType
+  public enum MsgType
         {
             Success = 1,
             Error = 2,
@@ -889,13 +978,6 @@ namespace " + DomainNameSpace + @".Enums
             Info = 4
         }
 
-
-			 ");
-
-                streamWriter.WriteLine(customText);
-
-
-                streamWriter.WriteLine(@" 
     }
 }
 ");
@@ -907,38 +989,23 @@ namespace " + DomainNameSpace + @".Enums
             #endregion
 
             #region ApplicationUser Class
-
-            customText = UtilityHelper.ReadCustomRegionText(Path.Combine(DomainEntitiesPath, "ApplicationUser.cs"));
-
             using (StreamWriter streamWriter =
                 new StreamWriter(Path.Combine(DomainEntitiesPath, "ApplicationUser.cs")))
             {
-                streamWriter.WriteLine(GetCreatedDateTime());
                 // Create the header for the class
                 streamWriter.WriteLine(@"
-     using System;
-     using System.Collections.Generic;
-     using Microsoft.AspNetCore.Identity;
-     using System.ComponentModel.DataAnnotations;
+                                        using System;
+                                        using Microsoft.AspNetCore.Identity;
+                                        using System.ComponentModel.DataAnnotations;
 
-     namespace " + DomainNameSpace + @".Entities
-     {
-        public class ApplicationUser : IdentityUser" +
-                                       (_appSetting.KeyType == 0 ? "<int>" : "<Guid>") + @"
+                                        namespace " + DomainNameSpace + @".Entities
+                                        {
+                                           public class ApplicationUser : IdentityUser<" + UtilityHelper.GetIDKeyType(_appSetting) + @">
                                             {
-                                               // [Required]
-                                             //   [StringLength(200)]
-                                           //     public string FullName { get; set; }
+                                                [Required]
+                                                [StringLength(200)]
+                                                public string FullName { get; set; }
 
-                                            //    public Guid? TenantId { get; set; }
-
-
-			 ");
-
-                streamWriter.WriteLine(customText);
-
-
-                streamWriter.WriteLine(@" 
                                             }
                                         }
                                       ");
@@ -946,111 +1013,6 @@ namespace " + DomainNameSpace + @".Enums
 
             }
 
-
-            #endregion
-
-
-            #region AppClaim Class
-
-            customText = UtilityHelper.ReadCustomRegionText(Path.Combine(DomainEntitiesPath, "AppClaim.cs"));
-
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(DomainEntitiesPath, "AppClaim.cs")))
-            {
-                streamWriter.WriteLine(GetCreatedDateTime());
-                // Create the header for the class
-                streamWriter.WriteLine(@"
-     using System;
-
-     namespace " + DomainNameSpace + @".Entities
-     {
-          public class AppClaim
-    {
-        #region Constructors
-
-        public AppClaim()
-        {
-
-        }
-
-        #endregion
-        #region Properties
-        public Guid AppClaimId { get; set; }
-
-        public Guid? ParentId { get; set; }
-        
-        public string ClaimTitle { get; set; }
-
-        public string UrlLink { get; set; }
-        
-        public int ShowOrder { get; set; }
-
-        public bool IsActive { get; set; }
-
-
-        public string DisplayName { get; set; }
-
-        #endregion
-                                               
-
-			 ");
-
-                streamWriter.WriteLine(customText);
-
-
-                streamWriter.WriteLine(@" 
-                                            }
-                                        }
-                                      ");
-
-
-            }
-
-
-            #endregion
-
-            #region Permissions Class
-
-            customText = UtilityHelper.ReadCustomRegionText(Path.Combine(DomainCommonPath, "EntityPermissions.cs"));
-
-            using (StreamWriter streamWriter =
-                new StreamWriter(Path.Combine(DomainCommonPath, "EntityPermissions.cs")))
-            {
-                // Create the header for the class
-                streamWriter.WriteLine(GetCreatedDateTime());
-                streamWriter.WriteLine(@"
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-
-namespace " + DomainNameSpace + @".Common
-{
-    public static class EntityPermissions 
-    {
-      ");
-                foreach (Table table in tableList)
-                {
-                    streamWriter.WriteLine("public static class " + table.Name + "Permissions");
-                    streamWriter.WriteLine("{");
-                    streamWriter.WriteLine("public const string List = \"Permissions." + table.Name + ".List\";");
-                    streamWriter.WriteLine("public const string View = \"Permissions." + table.Name + ".View\";");
-                    streamWriter.WriteLine("public const string Create = \"Permissions." + table.Name + ".Create\";");
-                    streamWriter.WriteLine("public const string Edit = \"Permissions." + table.Name + ".Edit\";");
-                    streamWriter.WriteLine("public const string Delete = \"Permissions." + table.Name + ".Delete\";");
-                    streamWriter.WriteLine("}");
-
-                }
-                streamWriter.WriteLine(customText);
-                streamWriter.WriteLine(@" 
-
-        }
-}
-                                        ");
-
-
-            }
-
-            #endregion
 
             #endregion
 
@@ -1065,43 +1027,28 @@ namespace " + DomainNameSpace + @".Common
 
                 string className = "";
 
-                #region Model Classes
+                #region  Model Classes
+                className = UtilityHelper.MakeSingular(table.Name);
 
-                className = table.Name;
-
-
-
-                customText = UtilityHelper.ReadCustomRegionText(Path.Combine(DomainEntitiesPath, className + ".cs"));
-
-                using (StreamWriter streamWriter =
-                    new StreamWriter(Path.Combine(DomainEntitiesPath, className + ".cs")))
+                using (StreamWriter streamWriter = new StreamWriter(Path.Combine(DomainEntitiesPath, className + ".cs")))
                 {
-                    streamWriter.WriteLine(GetCreatedDateTime());
                     // Create the header for the class
                     streamWriter.WriteLine("using System;");
                     streamWriter.WriteLine("using System.Collections.Generic;");
                     streamWriter.WriteLine("using System.ComponentModel.DataAnnotations;");
-                    streamWriter.WriteLine("using " + DomainNameSpace + ".Common;");
-
+                    streamWriter.WriteLine("using System.ComponentModel.DataAnnotations.Schema;");
+                    streamWriter.WriteLine("using " + DomainNameSpace + ".Interfaces;");
 
                     streamWriter.WriteLine();
                     streamWriter.WriteLine("namespace " + DomainNameSpace + ".Entities");
-
                     streamWriter.WriteLine("{");
-                    if (className != "AppClaim")
-                    {
-                        streamWriter.WriteLine("\tpublic class " + className + ": BaseEntity");
-                    }
-                    else
-                    {
-                        streamWriter.WriteLine("\tpublic class " + className);
-                    }
 
+                    streamWriter.WriteLine("\tpublic class " + className + UtilityHelper.GetEntityInterfaces(table.Columns, UtilityHelper.GetIDKeyType(_appSetting)));
 
                     streamWriter.WriteLine("\t{");
 
                     // Create an explicit public constructor
-                    streamWriter.WriteLine("\t\t#region Constructors");
+                    //   streamWriter.WriteLine("\t\t#region Constructors");
                     streamWriter.WriteLine();
                     streamWriter.WriteLine("\t\t/// <summary>");
                     streamWriter.WriteLine("\t\t/// Initializes a new instance of the " + className + " class.");
@@ -1112,29 +1059,27 @@ namespace " + DomainNameSpace + @".Common
                     string sameKey = "";
 
 
-                    foreach (var t in tableList)
-                    {
-                        foreach (var f in t.ForeignKeys.Values)
-                        {
-                            var foreignKeysList = f.Where(o => o.PrimaryKeyTableName == table.Name).ToList();
-                            for (int j = 0; j < foreignKeysList.Count; j++)
-                            {
-                                if (!string.IsNullOrEmpty(foreignKeysList[j].ForeignKeyTableName))
-                                {
-                                    if (sameKey != foreignKeysList[j].ForeignKeyTableName)
-                                    {
-                                        sameKey = foreignKeysList[j].ForeignKeyTableName;
+                    //foreach (var t in tableList)
+                    //{
+                    //    foreach (var f in t.ForeignKeys.Values)
+                    //    {
+                    //        var foreignKeysList = f.Where(o => o.PrimaryKeyTableName == table.Name).ToList();
+                    //        for (int j = 0; j < foreignKeysList.Count; j++)
+                    //        {
+                    //            if (!string.IsNullOrEmpty(foreignKeysList[j].ForeignKeyTableName))
+                    //            {
+                    //                if (sameKey != foreignKeysList[j].ForeignKeyTableName)
+                    //                {
+                    //                    sameKey = foreignKeysList[j].ForeignKeyTableName;
 
-                                        streamWriter.WriteLine("\t\t " +
-                                                               foreignKeysList[j].ForeignKeyTableName +
-                                                               "List =  new List<" +
-                                                               sameKey + ">(); ");
-                                        streamWriter.WriteLine();
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    //                    streamWriter.WriteLine("\t\t this." +
+                    //                                           foreignKeysList[j].ForeignKeyTableName + "List =  new List<" + sameKey + ">(); ");
+                    //                    streamWriter.WriteLine();
+                    //                }
+                    //            }
+                    //        }
+                    //    }
+                    //}
 
                     streamWriter.WriteLine();
 
@@ -1163,7 +1108,6 @@ namespace " + DomainNameSpace + @".Common
 
                     streamWriter.WriteLine("\t\t}");
                     streamWriter.WriteLine();
-                    streamWriter.WriteLine("\t\t#endregion");
 
                     //// Create the "partial" constructor
                     //int parameterCount = 0;
@@ -1250,8 +1194,7 @@ namespace " + DomainNameSpace + @".Common
                         string name = parameter.Split(' ')[1];
 
                         streamWriter.WriteLine("\t\t/// <summary>");
-                        streamWriter.WriteLine("\t\t/// Gets or sets the " + UtilityHelper.FormatPascal(name) +
-                                               " value.");
+                        streamWriter.WriteLine("\t\t/// Gets or sets the " + UtilityHelper.FormatPascal(name) + " value.");
                         streamWriter.WriteLine("\t\t/// </summary>");
 
 
@@ -1262,15 +1205,7 @@ namespace " + DomainNameSpace + @".Common
                                                        table.ForeignKeys, useResourceFile, "", table.Name));
                         }
 
-                        var nullableType = " ";
-                        if (column.IsNullable)
-                        {
-                            if (!type.Contains("?"))
-                                nullableType = "? ";
-                        }
-
-                        streamWriter.WriteLine("\t\tpublic " + (type == "AspNetUsers" ? "ApplicationUser" : type) + nullableType + UtilityHelper.FormatPascal(name) +
-                                               " { get; set; }");
+                        streamWriter.WriteLine("\t\tpublic " + type + " " + UtilityHelper.FormatPascal(name) + " { get; set; }");
 
                         if (i < (table.Columns.Count - 1))
                         {
@@ -1297,11 +1232,12 @@ namespace " + DomainNameSpace + @".Common
                                         sameKey = foreignKeysList[j].ForeignKeyTableName;
                                         //  public virtual ICollection<Course> Courses { get; set; }
                                         streamWriter.WriteLine("\t\tpublic virtual List<" +
-                                                               foreignKeysList[j].ForeignKeyTableName + "> " +
-                                                               foreignKeysList[j].ForeignKeyTableName +
-                                                               "List { get; set; }");
+                                                               UtilityHelper.MakeSingular(foreignKeysList[j].ForeignKeyTableName) + "> " +
+                                                             UtilityHelper.MakePlural(foreignKeysList[j].ForeignKeyTableName) +
+                                                               " { get; set; }");
                                         streamWriter.WriteLine();
                                     }
+
                                 }
                             }
                         }
@@ -1309,7 +1245,7 @@ namespace " + DomainNameSpace + @".Common
 
                     streamWriter.WriteLine();
 
-                    sameKey = "";
+
                     foreach (var f in table.ForeignKeys.Values)
                     {
                         var foreignKeysList = f.ToList();
@@ -1317,15 +1253,32 @@ namespace " + DomainNameSpace + @".Common
                         {
                             if (!string.IsNullOrEmpty(foreignKeysList[j].PrimaryKeyTableName))
                             {
+                                if (foreignKeysList[j].PrimaryKeyTableName == foreignKeysList[j].ForeignKeyTableName)
+                                {
+                                    // Self-referencing entity with one to many relationship generates
+                                    streamWriter.WriteLine("[ForeignKey(\"" +
+                                                           foreignKeysList[j].ForeignKeyColumnName + "\")]");
+                                    streamWriter.WriteLine("\t\tpublic virtual " +
+                                                           UtilityHelper.MakeSingular(foreignKeysList[j]
+                                                               .PrimaryKeyTableName) + " Parent " +
+                                                           " { get; set; }");
+
+                                }
+
                                 if (sameKey != foreignKeysList[j].PrimaryKeyTableName)
                                 {
                                     sameKey = foreignKeysList[j].PrimaryKeyTableName;
                                     //  public virtual Course Course { get; set; }
                                     // streamWriter.WriteLine("\t\t[BindNever]");
-                                    streamWriter.WriteLine("\t\tpublic virtual " + (foreignKeysList[j].PrimaryKeyTableName == "AspNetUsers" ? "ApplicationUser" : foreignKeysList[j].PrimaryKeyTableName) + " " +
+                                    streamWriter.WriteLine("[ForeignKey(\"" +
+                                                           foreignKeysList[j].ForeignKeyColumnName + "\")]");
+                                    streamWriter.WriteLine("\t\tpublic virtual " +
+                                                           UtilityHelper.MakeSingular(foreignKeysList[j].PrimaryKeyTableName) + " " +
                                                            foreignKeysList[j].PrimaryKeyTableName +
-                                                           "Class { get; set; }");
+                                                           " { get; set; }");
                                 }
+
+
                             }
                         }
                     }
@@ -1342,8 +1295,6 @@ namespace " + DomainNameSpace + @".Common
                     streamWriter.WriteLine("\t\t#endregion");
 
 
-                    streamWriter.WriteLine(customText);
-
 
                     streamWriter.WriteLine();
 
@@ -1351,7 +1302,6 @@ namespace " + DomainNameSpace + @".Common
                     streamWriter.WriteLine("\t}");
                     streamWriter.WriteLine("}");
                 }
-
                 #endregion
 
 

@@ -137,10 +137,18 @@ namespace MyAppGenerator
                     {
 
                         #region CQRS Architecture
-                        CQRS2Architecture.ProjectName = txtProjectName.Text.Trim();
-                        CQRS2Architecture.useResourceFile = chkWithResourcesFile.Checked;
-                        CQRS2Architecture.tables = tablesName;
-                        CQRS2Architecture.GenerateCQRS2Architecture(appSetting);
+                        CQRS3Architecture.ProjectName = txtProjectName.Text.Trim();
+                        CQRS3Architecture.useResourceFile = chkWithResourcesFile.Checked;
+                        CQRS3Architecture.tables = tablesName;
+                        CQRS3Architecture.GenerateCQRS3Architecture(appSetting);
+
+
+
+
+                        //CQRS2Architecture.ProjectName = txtProjectName.Text.Trim();
+                        //CQRS2Architecture.useResourceFile = chkWithResourcesFile.Checked;
+                        //CQRS2Architecture.tables = tablesName;
+                        //CQRS2Architecture.GenerateCQRS2Architecture(appSetting);
 
                         #endregion
 
